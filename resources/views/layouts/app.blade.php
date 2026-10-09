@@ -78,11 +78,21 @@
                         </a>
                         @if (Auth::user()->isAdmin())
                             <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Data Master</div>
-                            <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Data Mekanik</span>
-                            <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Kategori Sparepart</span>
-                            <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Jasa Servis</span>
-                            <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Akun Kasir</span>
-                            <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Data Sparepart & Stok</span>
+                            <a href="{{ route('admin.mekanik.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.mekanik.*') ? 'active' : '' }}">
+                                <i class="bi bi-person-workspace me-2"></i> Data Mekanik
+                            </a>
+                            <a href="{{ route('admin.kategori.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.kategori.*') ? 'active' : '' }}">
+                                <i class="bi bi-tags me-2"></i> Kategori Sparepart
+                            </a>
+                            <a href="{{ route('admin.jasa.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.jasa.*') ? 'active' : '' }}">
+                                <i class="bi bi-tools me-2"></i> Jasa Servis
+                            </a>
+                            <a href="{{ route('admin.spareparts.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.spareparts.*') ? 'active' : '' }}">
+                                <i class="bi bi-box-seam me-2"></i> Sparepart & Produk
+                            </a>
+                            <a href="{{ route('admin.kasir.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.kasir.*') ? 'active' : '' }}">
+                                <i class="bi bi-people me-2"></i> Akun Kasir
+                            </a>
                         @endif
 
                         <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Transaksi POS</div>

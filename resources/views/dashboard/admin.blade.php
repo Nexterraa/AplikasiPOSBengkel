@@ -150,20 +150,20 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary text-start d-flex align-items-center p-3 rounded-3" disabled>
-                        <i class="bi bi-tools fs-4 me-3 text-primary"></i>
+                    <a href="{{ route('admin.kategori.index') }}" class="btn btn-outline-primary text-start d-flex align-items-center p-3 rounded-3">
+                        <i class="bi bi-tags fs-4 me-3 text-primary"></i>
                         <div>
-                            <div class="fw-bold">Kelola Data Master</div>
-                            <small class="text-muted">Mekanik, Jasa, & Kategori (Tahap 4)</small>
+                            <div class="fw-bold">Kelola Kategori & Jasa</div>
+                            <small class="text-muted">Mekanik, Jasa, & Kategori</small>
                         </div>
-                    </button>
-                    <button class="btn btn-outline-success text-start d-flex align-items-center p-3 rounded-3" disabled>
+                    </a>
+                    <a href="{{ route('admin.spareparts.index') }}" class="btn btn-outline-success text-start d-flex align-items-center p-3 rounded-3">
                         <i class="bi bi-box-seam fs-4 me-3 text-success"></i>
                         <div>
                             <div class="fw-bold">Stok & Sparepart</div>
-                            <small class="text-muted">Kelola stok minimum & barang (Tahap 5)</small>
+                            <small class="text-muted">Kelola stok minimum & barang</small>
                         </div>
-                    </button>
+                    </a>
                     <a href="{{ route('profile.edit') }}" class="btn btn-outline-secondary text-start d-flex align-items-center p-3 rounded-3">
                         <i class="bi bi-person-gear fs-4 me-3 text-secondary"></i>
                         <div>
