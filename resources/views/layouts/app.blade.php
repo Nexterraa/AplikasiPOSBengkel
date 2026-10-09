@@ -93,6 +93,13 @@
                             <a href="{{ route('admin.kasir.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.kasir.*') ? 'active' : '' }}">
                                 <i class="bi bi-people me-2"></i> Akun Kasir
                             </a>
+                            <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Manajemen Stok</div>
+                            <a href="{{ route('admin.stok.create') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.stok.create') ? 'active' : '' }}">
+                                <i class="bi bi-box-arrow-in-down me-2"></i> Stok Masuk
+                            </a>
+                            <a href="{{ route('admin.stok.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.stok.index') ? 'active' : '' }}">
+                                <i class="bi bi-clock-history me-2"></i> Riwayat Stok
+                            </a>
                         @endif
 
                         <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Transaksi POS</div>
@@ -133,6 +140,7 @@
             &copy; {{ date('Y') }} POS Bengkel Motor — Aplikasi Kasir Bengkel Motor
         </div>
     </footer>
+    @stack('scripts')
 </body>
 </html>
 

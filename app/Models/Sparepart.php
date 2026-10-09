@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sparepart extends Model
 {
@@ -36,6 +37,25 @@ class Sparepart extends Model
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(Kategori::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    /**
+     * Status stok: Habis | Menipis | Aman
+     */
+    public function getStatusStokAttribute(): string
+    {
+        if ($this->stok <= 0) {
+            return 'Habis';
+        }
+        if ($this->stok <= $this->stok_minimum) {
+            return 'Menipis';
+        }
+        return 'Aman';
     }
 }
 

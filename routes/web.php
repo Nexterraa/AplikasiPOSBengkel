@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\KasirAccountController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\MekanikController;
 use App\Http\Controllers\Admin\SparepartController;
+use App\Http\Controllers\Admin\StokMasukController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -56,6 +57,11 @@ Route::middleware('auth')->group(function () {
         // Kelola Akun Kasir
         Route::resource('kasir', KasirAccountController::class)->only(['index', 'store', 'update']);
         Route::patch('kasir/{kasir}/toggle-status', [KasirAccountController::class, 'toggleStatus'])->name('kasir.toggleStatus');
+
+        // Manajemen Stok
+        Route::get('stok-masuk', [StokMasukController::class, 'create'])->name('stok.create');
+        Route::post('stok-masuk', [StokMasukController::class, 'store'])->name('stok.store');
+        Route::get('riwayat-stok', [StokMasukController::class, 'index'])->name('stok.index');
     });
 
     // Area Kasir (Khusus Role Kasir)
