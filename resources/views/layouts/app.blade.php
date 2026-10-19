@@ -102,6 +102,14 @@
                             </a>
                         @endif
 
+                        <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Pelanggan & Kendaraan</div>
+                        <a href="{{ route('customers.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                            <i class="bi bi-people-fill me-2"></i> Data Pelanggan
+                        </a>
+                        <a href="{{ route('vehicles.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
+                            <i class="bi bi-bicycle me-2"></i> Data Kendaraan
+                        </a>
+
                         <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Transaksi POS</div>
                         <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Transaksi Baru</span>
                         <span class="list-group-item text-muted disabled"><i class="bi bi-lock me-2"></i> Riwayat Transaksi</span>
