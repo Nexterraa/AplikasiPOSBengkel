@@ -23,24 +23,77 @@
                 <form action="{{ route('vehicles.store') }}" method="POST">
                     @csrf
 
-                    {{-- Pemilik / Customer --}}
-                    <div class="mb-3">
-                        <label for="customer_id" class="form-label fw-semibold">
-                            Pemilik Kendaraan (Pelanggan) <span class="text-danger">*</span>
+                    {{-- Cari Nama Pemilik (Search Bar) --}}
+                    <div class="mb-3 position-relative">
+                        <label for="customer_search" class="form-label fw-semibold">
+                            Cari Nama Pemilik <span class="text-danger">*</span>
                         </label>
-                        <select name="customer_id" id="customer_id" class="form-select @error('customer_id') is-invalid @enderror" required>
-                            <option value="">-- Pilih Pelanggan --</option>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="customer_search"
+                                class="form-control @error('customer_id') is-invalid @enderror"
+                                placeholder="Ketik nama pemilik untuk mencari..."
+                                autocomplete="off"
+                                value="{{ old('customer_name_display', $selectedCustomer ? $selectedCustomer->name : '') }}">
+                            <button class="btn btn-outline-secondary {{ $selectedCustomer ? '' : 'd-none' }}" type="button" id="btn_clear_customer" title="Hapus pilihan">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                        {{-- Hidden input customer_id for form submission --}}
+                        <input type="hidden" name="customer_id" id="customer_id" value="{{ old('customer_id', $customerId) }}">
+
+                        {{-- Live Dropdown Search Results --}}
+                        <div id="customer_results" class="list-group position-absolute w-100 shadow mt-1 d-none" style="z-index: 1050; max-height: 220px; overflow-y: auto;">
                             @foreach ($customers as $c)
-                                <option value="{{ $c->id }}" {{ old('customer_id', $customerId) == $c->id ? 'selected' : '' }}>
-                                    {{ $c->name }} — {{ $c->phone }}
-                                </option>
+                                <button type="button" class="list-group-item list-group-item-action py-2 customer-item text-start"
+                                    data-id="{{ $c->id }}"
+                                    data-name="{{ $c->name }}"
+                                    data-phone="{{ $c->phone }}">
+                                    <div class="fw-semibold text-dark">{{ $c->name }}</div>
+                                    <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ $c->phone }}</small>
+                                </button>
                             @endforeach
-                        </select>
+                            <div id="customer_not_found" class="list-group-item py-3 text-center d-none">
+                                <div class="text-danger fw-semibold mb-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i> Pemilik belum terdaftar
+                                </div>
+                                <div class="small text-muted mb-2">Nama "<span id="not_found_name"></span>" belum terdaftar di sistem.</div>
+                                <a href="{{ route('customers.create') }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-person-plus me-1"></i> Daftarkan Pelanggan Baru
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- Notifikasi Pemilik Belum Terdaftar --}}
+                        <div id="customer_unregistered_alert" class="mt-2 d-none">
+                            <div class="alert alert-warning border py-2 px-3 mb-0 small d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                                <div>
+                                    <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                                    <span>Pemilik belum terdaftar: "<strong id="unregistered_query"></strong>"</span>
+                                </div>
+                                <a href="{{ route('customers.create') }}" class="btn btn-sm btn-warning text-dark fw-semibold" target="_blank">
+                                    <i class="bi bi-person-plus me-1"></i> Daftarkan Pelanggan Baru
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- Status Terpilih --}}
+                        <div id="selected_customer_info" class="mt-2 {{ $selectedCustomer ? '' : 'd-none' }}">
+                            <div class="alert alert-success border-0 py-2 px-3 mb-0 small d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-check-circle-fill me-1"></i> Pemilik terpilih: <strong id="selected_name">{{ $selectedCustomer ? $selectedCustomer->name : '' }}</strong> <span id="selected_phone" class="text-muted">({{ $selectedCustomer ? $selectedCustomer->phone : '' }})</span>
+                                </div>
+                                <span class="badge bg-success">Siap Disimpan</span>
+                            </div>
+                        </div>
+
                         @error('customer_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
+
                         <div class="form-text">
-                            Pelanggan belum terdaftar? <a href="{{ route('customers.create') }}" class="text-primary text-decoration-none fw-semibold">Tambah pelanggan baru di sini</a>.
+                            Ketik nama atau nomor telepon pemilik untuk memilih pelanggan. Belum terdaftar? <a href="{{ route('customers.create') }}" class="text-primary text-decoration-none fw-semibold">Tambah baru di sini</a>.
                         </div>
                     </div>
 
@@ -134,4 +187,107 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('customer_search');
+    const resultsBox = document.getElementById('customer_results');
+    const hiddenInput = document.getElementById('customer_id');
+    const selectedInfo = document.getElementById('selected_customer_info');
+    const selectedName = document.getElementById('selected_name');
+    const selectedPhone = document.getElementById('selected_phone');
+    const clearBtn = document.getElementById('btn_clear_customer');
+    const items = document.querySelectorAll('.customer-item');
+    const notFound = document.getElementById('customer_not_found');
+    const notFoundName = document.getElementById('not_found_name');
+    const unregisteredAlert = document.getElementById('customer_unregistered_alert');
+    const unregisteredQuery = document.getElementById('unregistered_query');
+
+    function filterResults() {
+        const rawQuery = searchInput.value.trim();
+        const query = rawQuery.toLowerCase();
+        if (query.length === 0) {
+            resultsBox.classList.add('d-none');
+            if (unregisteredAlert) unregisteredAlert.classList.add('d-none');
+            return;
+        }
+
+        let matchCount = 0;
+        items.forEach(item => {
+            const name = item.dataset.name.toLowerCase();
+            const phone = item.dataset.phone.toLowerCase();
+            if (name.includes(query) || phone.includes(query)) {
+                item.classList.remove('d-none');
+                matchCount++;
+            } else {
+                item.classList.add('d-none');
+            }
+        });
+
+        if (matchCount > 0) {
+            notFound.classList.add('d-none');
+            resultsBox.classList.remove('d-none');
+            if (unregisteredAlert) unregisteredAlert.classList.add('d-none');
+        } else {
+            if (notFoundName) notFoundName.textContent = rawQuery;
+            notFound.classList.remove('d-none');
+            resultsBox.classList.remove('d-none');
+            if (unregisteredQuery) unregisteredQuery.textContent = rawQuery;
+            if (unregisteredAlert) unregisteredAlert.classList.remove('d-none');
+        }
+    }
+
+    searchInput.addEventListener('input', function () {
+        if (hiddenInput.value) {
+            hiddenInput.value = '';
+            selectedInfo.classList.add('d-none');
+            if (clearBtn) clearBtn.classList.add('d-none');
+        }
+        filterResults();
+    });
+
+    searchInput.addEventListener('focus', function () {
+        if (this.value.trim().length > 0 && !hiddenInput.value) {
+            filterResults();
+        }
+    });
+
+    items.forEach(item => {
+        item.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const phone = this.dataset.phone;
+
+            hiddenInput.value = id;
+            searchInput.value = name; // Tampilkan nama saja tanpa nomor telepon
+            selectedName.textContent = name;
+            selectedPhone.textContent = '(' + phone + ')';
+            selectedInfo.classList.remove('d-none');
+            resultsBox.classList.add('d-none');
+            if (unregisteredAlert) unregisteredAlert.classList.add('d-none');
+            if (clearBtn) clearBtn.classList.remove('d-none');
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            hiddenInput.value = '';
+            searchInput.value = '';
+            selectedInfo.classList.add('d-none');
+            resultsBox.classList.add('d-none');
+            if (unregisteredAlert) unregisteredAlert.classList.add('d-none');
+            clearBtn.classList.add('d-none');
+            searchInput.focus();
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+            resultsBox.classList.add('d-none');
+        }
+    });
+});
+</script>
+@endpush
 

@@ -332,6 +332,11 @@ class CustomerVehicleTest extends TestCase
         $responseVeh = $this->actingAs($this->kasir)->get(route('vehicles.index', ['search' => 'AB 1234 CD']));
         $responseVeh->assertSee('AB 1234 CD');
         $responseVeh->assertDontSee('DK 5678 EF');
+
+        // Vehicle search by customer name
+        $responseVehOwner = $this->actingAs($this->kasir)->get(route('vehicles.index', ['customer_name' => 'Rina']));
+        $responseVehOwner->assertSee('AB 1234 CD');
+        $responseVehOwner->assertDontSee('DK 5678 EF');
     }
 }
 

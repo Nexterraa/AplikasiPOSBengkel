@@ -18,28 +18,24 @@
     <div class="card-body">
         <form method="GET" action="{{ route('vehicles.index') }}" class="row g-2 align-items-end">
             <div class="col-md-5 col-lg-4">
-                <label for="search" class="form-label small fw-semibold text-muted">Cari Kendaraan / Pemilik</label>
+                <label for="search" class="form-label small fw-semibold text-muted">Cari Kendaraan</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="search" id="search" class="form-control" placeholder="No. plat, merek, model, pemilik..." value="{{ $search }}">
+                    <input type="text" name="search" id="search" class="form-control" placeholder="No. plat, merek, model..." value="{{ $search }}">
                 </div>
             </div>
             <div class="col-md-4 col-lg-4">
-                <label for="customer_id" class="form-label small fw-semibold text-muted">Filter Pemilik (Pelanggan)</label>
-                <select name="customer_id" id="customer_id" class="form-select">
-                    <option value="">-- Semua Pelanggan --</option>
-                    @foreach ($customers as $c)
-                        <option value="{{ $c->id }}" {{ $customerId == $c->id ? 'selected' : '' }}>
-                            {{ $c->name }} ({{ $c->phone }})
-                        </option>
-                    @endforeach
-                </select>
+                <label for="customer_name" class="form-label small fw-semibold text-muted">Cari Nama Pemilik</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-person text-muted"></i></span>
+                    <input type="text" name="customer_name" id="customer_name" class="form-control" placeholder="Ketik nama pemilik..." value="{{ $customerName }}">
+                </div>
             </div>
             <div class="col-md-3 col-lg-4 d-flex gap-2">
                 <button type="submit" class="btn btn-outline-primary">
                     <i class="bi bi-filter me-1"></i> Filter
                 </button>
-                @if ($search || $customerId)
+                @if ($search || $customerId || $customerName)
                     <a href="{{ route('vehicles.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle me-1"></i> Reset
                     </a>
@@ -119,7 +115,7 @@
                         <tr>
                             <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-bicycle fs-1 d-block mb-2 text-secondary"></i>
-                                @if ($search || $customerId)
+                                @if ($search || $customerId || $customerName)
                                     Tidak ditemukan kendaraan yang cocok dengan filter pencarian.
                                 @else
                                     Belum ada data kendaraan yang terdaftar.

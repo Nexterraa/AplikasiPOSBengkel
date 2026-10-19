@@ -18,10 +18,16 @@ class VehicleController extends Controller
     {
         $search = $request->input('search');
         $customerId = $request->input('customer_id');
+        $customerName = $request->input('customer_name');
 
         $vehicles = Vehicle::with('customer')
             ->when($customerId, function ($query, $customerId) {
                 return $query->where('customer_id', $customerId);
+            })
+            ->when($customerName, function ($query, $customerName) {
+                return $query->whereHas('customer', function ($cq) use ($customerName) {
+                    $cq->where('name', 'like', "%{$customerName}%");
+                });
             })
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
@@ -40,7 +46,7 @@ class VehicleController extends Controller
 
         $customers = Customer::orderBy('name')->get(['id', 'name', 'phone']);
 
-        return view('vehicles.index', compact('vehicles', 'search', 'customerId', 'customers'));
+        return view('vehicles.index', compact('vehicles', 'search', 'customerId', 'customerName', 'customers'));
     }
 
     /**
@@ -50,8 +56,9 @@ class VehicleController extends Controller
     {
         $customerId = $request->input('customer_id');
         $customers = Customer::orderBy('name')->get(['id', 'name', 'phone']);
+        $selectedCustomer = $customerId ? Customer::find($customerId) : null;
 
-        return view('vehicles.create', compact('customers', 'customerId'));
+        return view('vehicles.create', compact('customers', 'customerId', 'selectedCustomer'));
     }
 
     /**
@@ -106,8 +113,9 @@ class VehicleController extends Controller
     public function edit(Vehicle $vehicle): View
     {
         $customers = Customer::orderBy('name')->get(['id', 'name', 'phone']);
+        $selectedCustomer = $vehicle->customer;
 
-        return view('vehicles.edit', compact('vehicle', 'customers'));
+        return view('vehicles.edit', compact('vehicle', 'customers', 'selectedCustomer'));
     }
 
     /**
