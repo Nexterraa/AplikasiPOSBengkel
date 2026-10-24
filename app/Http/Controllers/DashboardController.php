@@ -13,22 +13,22 @@ class DashboardController extends Controller
      */
     public function admin(): View
     {
-        $hasTransaksiTable = Schema::hasTable('transaksi') || Schema::hasTable('transaksis');
+        $hasTransaksiTable = Schema::hasTable('transactions') || Schema::hasTable('transaksi') || Schema::hasTable('transaksis');
         $hasSparepartTable = Schema::hasTable('sparepart') || Schema::hasTable('spareparts');
 
-        $transaksiTable = Schema::hasTable('transaksi') ? 'transaksi' : 'transaksis';
+        $transaksiTable = Schema::hasTable('transactions') ? 'transactions' : (Schema::hasTable('transaksi') ? 'transaksi' : 'transaksis');
         $sparepartTable = Schema::hasTable('sparepart') ? 'sparepart' : 'spareparts';
 
         $totalOmzet = $hasTransaksiTable
-            ? (float) DB::table($transaksiTable)->where('status', 'LUNAS')->sum('total')
+            ? (float) DB::table($transaksiTable)->whereIn('status', ['LUNAS', 'lunas'])->sum('total')
             : 0;
 
         $totalTransaksiLunas = $hasTransaksiTable
-            ? DB::table($transaksiTable)->where('status', 'LUNAS')->count()
+            ? DB::table($transaksiTable)->whereIn('status', ['LUNAS', 'lunas'])->count()
             : 0;
 
         $totalTransaksiBelumBayar = $hasTransaksiTable
-            ? DB::table($transaksiTable)->where('status', 'BELUM DIBAYAR')->count()
+            ? DB::table($transaksiTable)->whereIn('status', ['BELUM DIBAYAR', 'belum_dibayar'])->count()
             : 0;
 
         $stokMenipisCount = $hasSparepartTable
@@ -53,28 +53,28 @@ class DashboardController extends Controller
      */
     public function kasir(): View
     {
-        $hasTransaksiTable = Schema::hasTable('transaksi') || Schema::hasTable('transaksis');
-        $transaksiTable = Schema::hasTable('transaksi') ? 'transaksi' : 'transaksis';
+        $hasTransaksiTable = Schema::hasTable('transactions') || Schema::hasTable('transaksi') || Schema::hasTable('transaksis');
+        $transaksiTable = Schema::hasTable('transactions') ? 'transactions' : (Schema::hasTable('transaksi') ? 'transaksi' : 'transaksis');
 
         $today = date('Y-m-d');
 
         $omzetHariIni = $hasTransaksiTable
             ? (float) DB::table($transaksiTable)
-                ->where('status', 'LUNAS')
+                ->whereIn('status', ['LUNAS', 'lunas'])
                 ->whereDate('created_at', $today)
                 ->sum('total')
             : 0;
 
         $transaksiHariIniCount = $hasTransaksiTable
             ? DB::table($transaksiTable)
-                ->where('status', 'LUNAS')
+                ->whereIn('status', ['LUNAS', 'lunas'])
                 ->whereDate('created_at', $today)
                 ->count()
             : 0;
 
         $pendingHariIniCount = $hasTransaksiTable
             ? DB::table($transaksiTable)
-                ->where('status', 'BELUM DIBAYAR')
+                ->whereIn('status', ['BELUM DIBAYAR', 'belum_dibayar'])
                 ->whereDate('created_at', $today)
                 ->count()
             : 0;

@@ -20,6 +20,9 @@ class Sparepart extends Model
         'harga_jual',
         'stok',
         'stok_minimum',
+        'wholesale_price',
+        'wholesale_min_qty',
+        'promo_price',
         'is_active',
     ];
 
@@ -28,6 +31,9 @@ class Sparepart extends Model
         return [
             'harga_beli' => 'float',
             'harga_jual' => 'float',
+            'wholesale_price' => 'float',
+            'wholesale_min_qty' => 'integer',
+            'promo_price' => 'float',
             'stok' => 'integer',
             'stok_minimum' => 'integer',
             'is_active' => 'boolean',

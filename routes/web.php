@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -71,9 +72,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'kasir'])->name('dashboard');
     });
 
-    // Manajemen Pelanggan & Kendaraan (Dapat diakses oleh Admin & Kasir)
+    // Manajemen Pelanggan, Kendaraan, dan Transaksi (Dapat diakses oleh Admin & Kasir)
     Route::middleware('role:admin,kasir')->group(function () {
         Route::resource('customers', CustomerController::class);
         Route::resource('vehicles', VehicleController::class);
+        Route::resource('transactions', TransactionController::class)->except(['destroy']);
     });
 });
