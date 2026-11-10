@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\JasaServisController;
 use App\Http\Controllers\Admin\KasirAccountController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\MekanikController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SparepartController;
 use App\Http\Controllers\Admin\StokMasukController;
 use App\Http\Controllers\Auth\AuthController;
@@ -66,6 +67,10 @@ Route::middleware('auth')->group(function () {
         Route::get('stok-masuk', [StokMasukController::class, 'create'])->name('stok.create');
         Route::post('stok-masuk', [StokMasukController::class, 'store'])->name('stok.store');
         Route::get('riwayat-stok', [StokMasukController::class, 'index'])->name('stok.index');
+
+        // Laporan Transaksi / Penjualan
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/{transaction}', [ReportController::class, 'show'])->name('reports.show');
     });
 
     // Area Kasir (Khusus Role Kasir)

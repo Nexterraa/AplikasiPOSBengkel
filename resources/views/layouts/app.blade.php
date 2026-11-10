@@ -100,6 +100,10 @@
                             <a href="{{ route('admin.stok.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.stok.index') ? 'active' : '' }}">
                                 <i class="bi bi-clock-history me-2"></i> Riwayat Stok
                             </a>
+                            <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Laporan</div>
+                            <a href="{{ route('admin.reports.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Transaksi
+                            </a>
                         @endif
 
                         <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Pelanggan & Kendaraan</div>
