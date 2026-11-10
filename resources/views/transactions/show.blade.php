@@ -31,6 +31,13 @@
             <a href="{{ route('transactions.edit', $transaction) }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil me-1"></i> Edit Transaksi
             </a>
+            <a href="{{ route('transactions.payment', $transaction) }}" class="btn btn-success btn-sm">
+                <i class="bi bi-credit-card me-1"></i> Proses Pembayaran
+            </a>
+        @elseif ($transaction->isLunas())
+            <a href="{{ route('transactions.invoice', $transaction) }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-printer me-1"></i> Cetak Invoice
+            </a>
         @endif
     </div>
 </div>
@@ -161,7 +168,7 @@
                         @if ($transaction->isBelumDibayar())
                             <div class="p-3 bg-light rounded-3 border-start border-4 border-warning">
                                 <div class="fw-bold text-dark small"><i class="bi bi-info-circle me-1 text-warning"></i> Status: Belum Dibayar</div>
-                                <div class="text-muted small">Transaksi dapat diedit selama belum dibayar. Pembayaran akan diproses pada tahap berikutnya.</div>
+                                <div class="text-muted small">Transaksi dapat diedit atau dibayar selama belum lunas.</div>
                             </div>
                         @else
                             <div class="p-3 bg-light rounded-3 border-start border-4 border-success">

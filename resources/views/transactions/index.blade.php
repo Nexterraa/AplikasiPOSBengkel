@@ -109,6 +109,13 @@
                                         <a href="{{ route('transactions.edit', $trx) }}" class="btn btn-outline-warning" title="Edit Transaksi">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                        <a href="{{ route('transactions.payment', $trx) }}" class="btn btn-outline-success" title="Bayar">
+                                            <i class="bi bi-credit-card"></i>
+                                        </a>
+                                    @elseif ($trx->isLunas())
+                                        <a href="{{ route('transactions.invoice', $trx) }}" class="btn btn-outline-info" title="Invoice">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
                                     @endif
                                 </div>
                             </td>

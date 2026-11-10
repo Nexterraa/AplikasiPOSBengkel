@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Auth;
@@ -77,5 +78,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('customers', CustomerController::class);
         Route::resource('vehicles', VehicleController::class);
         Route::resource('transactions', TransactionController::class)->except(['destroy']);
+        Route::get('transactions/{transaction}/payment', [PaymentController::class, 'create'])->name('transactions.payment');
+        Route::post('transactions/{transaction}/pay', [PaymentController::class, 'store'])->name('transactions.pay');
+        Route::get('transactions/{transaction}/invoice', [PaymentController::class, 'invoice'])->name('transactions.invoice');
     });
 });
