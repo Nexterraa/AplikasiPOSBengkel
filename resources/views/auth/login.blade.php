@@ -48,6 +48,9 @@
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
                             <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="Masukkan password" required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword" title="Tampilkan / Sembunyikan password" aria-label="Tampilkan atau sembunyikan password">
+                                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -67,5 +70,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('togglePasswordIcon');
+
+        if (togglePassword && passwordInput && toggleIcon) {
+            togglePassword.addEventListener('click', function () {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                toggleIcon.classList.toggle('bi-eye', !isPassword);
+                toggleIcon.classList.toggle('bi-eye-slash', isPassword);
+            });
+        }
+    });
+</script>
 @endsection
 
