@@ -93,6 +93,11 @@ class VehicleController extends Controller
 
         $vehicle = Vehicle::create($validated);
 
+        if ($request->input('redirect_to') === 'customer' || $request->has('from_customer')) {
+            return redirect()->route('customers.show', $vehicle->customer_id)
+                ->with('success', "Kendaraan dengan plat \"{$vehicle->plate_number}\" berhasil ditambahkan.");
+        }
+
         return redirect()->route('vehicles.show', $vehicle)
             ->with('success', "Kendaraan dengan plat \"{$vehicle->plate_number}\" berhasil ditambahkan.");
     }
@@ -150,20 +155,42 @@ class VehicleController extends Controller
 
         $vehicle->update($validated);
 
+        if ($request->input('redirect_to') === 'customer' || $request->has('from_customer')) {
+            return redirect()->route('customers.show', $vehicle->customer_id)
+                ->with('success', "Data kendaraan plat \"{$vehicle->plate_number}\" berhasil diperbarui.");
+        }
+
         return redirect()->route('vehicles.show', $vehicle)
             ->with('success', "Data kendaraan plat \"{$vehicle->plate_number}\" berhasil diperbarui.");
     }
 
     /**
-     * Hapus data kendaraan.
+     * Hapus data kendaraan dengan proteksi keterikatan transaksi.
      */
-    public function destroy(Vehicle $vehicle): RedirectResponse
+    public function destroy(Request $request, Vehicle $vehicle): RedirectResponse
     {
+        $customerId = $vehicle->customer_id;
         $plate = $vehicle->plate_number;
-        $vehicle->delete();
 
-        return redirect()->route('vehicles.index')
-            ->with('success', "Kendaraan dengan plat \"{$plate}\" berhasil dihapus.");
+        // Cegah penghapusan jika kendaraan sudah digunakan pada transaksi
+        if (\Illuminate\Support\Facades\Schema::hasTable('transactions') &&
+            \Illuminate\Support\Facades\DB::table('transactions')->where('vehicle_id', $vehicle->id)->exists()) {
+            return back()->with('error', "Kendaraan dengan plat \"{$plate}\" tidak dapat dihapus karena sudah terikat dengan data transaksi.");
+        }
+
+        try {
+            $vehicle->delete();
+
+            if ($request->input('redirect_to') === 'customer' || $request->has('from_customer')) {
+                return redirect()->route('customers.show', $customerId)
+                    ->with('success', "Kendaraan dengan plat \"{$plate}\" berhasil dihapus.");
+            }
+
+            return redirect()->route('vehicles.index')
+                ->with('success', "Kendaraan dengan plat \"{$plate}\" berhasil dihapus.");
+        } catch (\Throwable $e) {
+            return back()->with('error', "Kendaraan dengan plat \"{$plate}\" tidak dapat dihapus karena masih terkait dengan data transaksi.");
+        }
     }
 }
 

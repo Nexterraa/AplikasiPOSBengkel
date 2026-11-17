@@ -18,6 +18,18 @@
     </div>
 </div>
 
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Terjadi Kesalahan Input:</h6>
+        <ul class="mb-0 ps-3 small">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="row g-4">
     {{-- Card Profil Pelanggan --}}
     <div class="col-lg-4">
@@ -60,9 +72,9 @@
                 <h5 class="fw-bold mb-0">
                     <i class="bi bi-bicycle me-2 text-primary"></i>Kendaraan Terdaftar
                 </h5>
-                <a href="{{ route('vehicles.create', ['customer_id' => $customer->id]) }}" class="btn btn-sm btn-success">
+                <button type="button" class="btn btn-sm btn-success fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTambahKendaraan">
                     <i class="bi bi-plus-circle me-1"></i> Tambah Kendaraan
-                </a>
+                </button>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -81,9 +93,9 @@
                                 <tr>
                                     <td class="ps-3 text-muted small">{{ $index + 1 }}</td>
                                     <td>
-                                        <a href="{{ route('vehicles.show', $vehicle) }}" class="badge bg-dark fs-6 text-decoration-none px-2 py-1">
+                                        <span class="badge bg-dark fs-6 px-2 py-1">
                                             {{ $vehicle->plate_number }}
-                                        </a>
+                                        </span>
                                     </td>
                                     <td>
                                         <div class="fw-semibold">{{ $vehicle->brand }}</div>
@@ -93,29 +105,70 @@
                                         {{ $vehicle->year ?: '-' }}
                                     </td>
                                     <td class="text-end pe-3">
-                                        <a href="{{ route('vehicles.show', $vehicle) }}" class="btn btn-sm btn-outline-info me-1" title="Lihat Detail">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="{{ route('vehicles.edit', $vehicle) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit Kendaraan">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kendaraan ini?')">
+                                        <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditKendaraan{{ $vehicle->id }}" title="Edit Kendaraan">
+                                            <i class="bi bi-pencil me-1"></i> Edit
+                                        </button>
+                                        <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kendaraan dengan plat {{ $vehicle->plate_number }}?')">
                                             @csrf
                                             @method('DELETE')
+                                            <input type="hidden" name="redirect_to" value="customer">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Kendaraan">
-                                                <i class="bi bi-trash"></i>
+                                                <i class="bi bi-trash me-1"></i> Hapus
                                             </button>
                                         </form>
                                     </td>
                                 </tr>
+
+                                {{-- Modal Edit Kendaraan --}}
+                                <div class="modal fade" id="modalEditKendaraan{{ $vehicle->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="{{ route('vehicles.update', $vehicle) }}" method="POST">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                                                <input type="hidden" name="redirect_to" value="customer">
+
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold">Edit Kendaraan - {{ $vehicle->plate_number }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-start">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Nomor Polisi / Plat <span class="text-danger">*</span></label>
+                                                        <input type="text" name="plate_number" class="form-control text-uppercase" value="{{ old('plate_number', $vehicle->plate_number) }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Merek Kendaraan <span class="text-danger">*</span></label>
+                                                        <input type="text" name="brand" class="form-control" value="{{ old('brand', $vehicle->brand) }}" placeholder="Contoh: Honda, Yamaha" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Model / Tipe Kendaraan <span class="text-danger">*</span></label>
+                                                        <input type="text" name="model" class="form-control" value="{{ old('model', $vehicle->model) }}" placeholder="Contoh: Vario 150, Beat" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Tahun Pembuatan</label>
+                                                        <input type="number" name="year" class="form-control" value="{{ old('year', $vehicle->year) }}" placeholder="Contoh: 2021">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                                                    <button type="submit" class="btn btn-primary fw-semibold">
+                                                        <i class="bi bi-save me-1"></i> Simpan Perubahan
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">
+                                    <td colspan="5" class="text-center py-5 text-muted">
                                         <i class="bi bi-bicycle fs-2 d-block mb-2 text-secondary"></i>
                                         Pelanggan ini belum memiliki kendaraan terdaftar.<br>
-                                        <a href="{{ route('vehicles.create', ['customer_id' => $customer->id]) }}" class="btn btn-outline-primary btn-sm mt-2">
+                                        <button type="button" class="btn btn-outline-primary btn-sm mt-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTambahKendaraan">
                                             <i class="bi bi-plus-lg me-1"></i> Daftarkan Kendaraan Sekarang
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                             @endforelse
@@ -126,5 +179,47 @@
         </div>
     </div>
 </div>
-@endsection
 
+{{-- Modal Tambah Kendaraan --}}
+<div class="modal fade" id="modalTambahKendaraan" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('vehicles.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                <input type="hidden" name="redirect_to" value="customer">
+
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Tambah Kendaraan untuk {{ $customer->name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <div class="mb-3">
+                        <label for="plate_number" class="form-label fw-semibold">Nomor Polisi / Plat <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control text-uppercase" id="plate_number" name="plate_number" placeholder="Contoh: B 1234 XYZ" value="{{ old('plate_number') }}" required>
+                        <div class="form-text text-muted small">Huruf akan otomatis dikonversi menjadi huruf kapital.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="brand" class="form-label fw-semibold">Merek Kendaraan <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="brand" name="brand" placeholder="Contoh: Honda, Yamaha, Suzuki" value="{{ old('brand') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="model" class="form-label fw-semibold">Model / Tipe Kendaraan <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="model" name="model" placeholder="Contoh: Vario 160, Beat, NMAX" value="{{ old('model') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="year" class="form-label fw-semibold">Tahun Pembuatan (Opsional)</label>
+                        <input type="number" class="form-control" id="year" name="year" placeholder="Contoh: 2022" value="{{ old('year') }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success fw-semibold">
+                        <i class="bi bi-save me-1"></i> Simpan Kendaraan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection

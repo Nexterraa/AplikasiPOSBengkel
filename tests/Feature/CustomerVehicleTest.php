@@ -338,5 +338,134 @@ class CustomerVehicleTest extends TestCase
         $responseVehOwner->assertSee('AB 1234 CD');
         $responseVehOwner->assertDontSee('DK 5678 EF');
     }
+
+    public function test_customer_show_displays_customer_details_and_vehicles(): void
+    {
+        $customer = Customer::create([
+            'name' => 'Hendro Siswanto',
+            'phone' => '081299887766',
+        ]);
+
+        $vehicle = Vehicle::create([
+            'customer_id' => $customer->id,
+            'plate_number' => 'B 9876 ABC',
+            'brand' => 'Yamaha',
+            'model' => 'Mio M3',
+            'year' => 2019,
+        ]);
+
+        // Cek halaman index menampilkan tombol detail
+        $responseIndex = $this->actingAs($this->kasir)->get(route('customers.index'));
+        $responseIndex->assertStatus(200);
+        $responseIndex->assertSee(route('customers.show', $customer));
+        $responseIndex->assertSee('Detail');
+
+        // Cek halaman detail menampilkan data lengkap
+        $responseShow = $this->actingAs($this->kasir)->get(route('customers.show', $customer));
+        $responseShow->assertStatus(200);
+        $responseShow->assertSee('Hendro Siswanto');
+        $responseShow->assertSee('081299887766');
+        $responseShow->assertSee('B 9876 ABC');
+        $responseShow->assertSee('Yamaha');
+        $responseShow->assertSee('Mio M3');
+        $responseShow->assertSee('2019');
+        $responseShow->assertSee('Tambah Kendaraan');
+    }
+
+    public function test_can_add_edit_and_delete_vehicle_from_customer_detail_page(): void
+    {
+        $customer = Customer::create([
+            'name' => 'Anisa Rahma',
+            'phone' => '085711223344',
+        ]);
+
+        // 1. Tambah kendaraan dari halaman detail pelanggan
+        $responseAdd = $this->actingAs($this->kasir)->post(route('vehicles.store'), [
+            'customer_id' => $customer->id,
+            'redirect_to' => 'customer',
+            'plate_number' => 'D 1122 XYZ',
+            'brand' => 'Honda',
+            'model' => 'PCX 160',
+            'year' => 2023,
+        ]);
+
+        $responseAdd->assertRedirect(route('customers.show', $customer));
+        $responseAdd->assertSessionHas('success');
+        $this->assertDatabaseHas('vehicles', [
+            'customer_id' => $customer->id,
+            'plate_number' => 'D 1122 XYZ',
+            'brand' => 'Honda',
+            'model' => 'PCX 160',
+        ]);
+
+        $vehicle = Vehicle::where('plate_number', 'D 1122 XYZ')->first();
+
+        // 2. Edit kendaraan dari halaman detail pelanggan
+        $responseEdit = $this->actingAs($this->kasir)->put(route('vehicles.update', $vehicle), [
+            'customer_id' => $customer->id,
+            'redirect_to' => 'customer',
+            'plate_number' => 'D 1122 XYZ',
+            'brand' => 'Honda',
+            'model' => 'PCX 160 ABS',
+            'year' => 2024,
+        ]);
+
+        $responseEdit->assertRedirect(route('customers.show', $customer));
+        $responseEdit->assertSessionHas('success');
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->id,
+            'model' => 'PCX 160 ABS',
+            'year' => 2024,
+        ]);
+
+        // 3. Hapus kendaraan dari halaman detail pelanggan
+        $responseDelete = $this->actingAs($this->kasir)->delete(route('vehicles.destroy', $vehicle), [
+            'redirect_to' => 'customer',
+        ]);
+
+        $responseDelete->assertRedirect(route('customers.show', $customer));
+        $responseDelete->assertSessionHas('success');
+        $this->assertDatabaseMissing('vehicles', [
+            'id' => $vehicle->id,
+        ]);
+    }
+
+    public function test_vehicle_with_transactions_cannot_be_deleted(): void
+    {
+        $customer = Customer::create([
+            'name' => 'Wawan Kurniawan',
+            'phone' => '081912345678',
+        ]);
+
+        $vehicle = Vehicle::create([
+            'customer_id' => $customer->id,
+            'plate_number' => 'B 4321 TRX',
+            'brand' => 'Suzuki',
+            'model' => 'Satria F150',
+            'year' => 2018,
+        ]);
+
+        // Buat tabel transactions sementara untuk menguji proteksi relasi
+        \Illuminate\Support\Facades\Schema::create('transactions', function ($table) {
+            $table->id();
+            $table->foreignId('vehicle_id');
+        });
+        \Illuminate\Support\Facades\DB::table('transactions')->insert([
+            'vehicle_id' => $vehicle->id,
+        ]);
+
+        // Mencoba menghapus kendaraan yang terikat transaksi
+        $response = $this->actingAs($this->kasir)->delete(route('vehicles.destroy', $vehicle), [
+            'redirect_to' => 'customer',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->id,
+        ]);
+
+        // Bersihkan tabel transactions sementara
+        \Illuminate\Support\Facades\Schema::dropIfExists('transactions');
+    }
 }
 
