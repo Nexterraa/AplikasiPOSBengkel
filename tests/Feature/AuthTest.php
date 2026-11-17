@@ -18,6 +18,16 @@ class AuthTest extends TestCase
         $response->assertSee('POS Bengkel Motor');
     }
 
+    public function test_login_screen_renders_password_toggle_button(): void
+    {
+        $response = $this->get('/login');
+
+        $response->assertStatus(200);
+        $response->assertSee('id="togglePassword"', false);
+        $response->assertSee('id="togglePasswordIcon"', false);
+        $response->assertSee('bi-eye', false);
+    }
+
     public function test_admin_can_authenticate_and_redirect_to_admin_dashboard(): void
     {
         $admin = User::factory()->create([
