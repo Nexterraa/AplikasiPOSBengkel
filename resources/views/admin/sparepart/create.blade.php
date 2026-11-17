@@ -28,7 +28,11 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <label for="kode_sparepart" class="form-label fw-semibold">Kode Sparepart / SKU <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="kode_sparepart" name="kode_sparepart" value="{{ old('kode_sparepart') }}" placeholder="Contoh: SPR-001" required>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-upc-scan"></i></span>
+                        <input type="text" class="form-control bg-light" id="kode_sparepart" name="kode_sparepart" value="{{ old('kode_sparepart', $kodeOtomatis) }}" readonly>
+                    </div>
+                    <div class="form-text text-muted small"><i class="bi bi-info-circle me-1"></i>Kode otomatis dibuat oleh sistem berdasarkan data terakhir.</div>
                 </div>
 
                 <div class="col-md-5">

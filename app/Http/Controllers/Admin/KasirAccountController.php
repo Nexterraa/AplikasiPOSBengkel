@@ -105,5 +105,23 @@ class KasirAccountController extends Controller
 
         return back()->with('success', "Akun kasir berhasil {$statusText}.");
     }
+
+    public function destroy(User $kasir): RedirectResponse
+    {
+        if ($kasir->isAdmin()) {
+            return back()->with('error', 'Akun Administrator tidak dapat dihapus.');
+        }
+
+        if ($kasir->id === Auth::id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        try {
+            $kasir->delete();
+            return back()->with('success', 'Akun kasir berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Akun kasir tidak dapat dihapus karena masih terkait dengan data transaksi.');
+        }
+    }
 }
 

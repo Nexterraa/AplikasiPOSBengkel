@@ -58,15 +58,13 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditJasa{{ $jasa->id }}">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </button>
-                                @if($jasa->is_active)
-                                    <form action="{{ route('admin.jasa.destroy', $jasa->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan jasa ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-eye-slash"></i> Nonaktifkan
-                                        </button>
-                                    </form>
-                                @endif
+                                <form action="{{ route('admin.jasa.destroy', $jasa->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jasa servis ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash me-1"></i> Hapus
+                                    </button>
+                                </form>
                             </td>
                         </tr>
 
@@ -139,7 +137,11 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="kode_jasa" class="form-label fw-semibold">Kode Jasa</label>
-                        <input type="text" class="form-control" id="kode_jasa" name="kode_jasa" placeholder="Contoh: SRV-01" required>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-upc-scan"></i></span>
+                            <input type="text" class="form-control bg-light" id="kode_jasa" name="kode_jasa" value="{{ old('kode_jasa', $kodeOtomatis) }}" readonly>
+                        </div>
+                        <div class="form-text text-muted small"><i class="bi bi-info-circle me-1"></i>Kode otomatis dibuat oleh sistem berdasarkan data terakhir.</div>
                     </div>
                     <div class="mb-3">
                         <label for="nama_jasa" class="form-label fw-semibold">Nama Jasa Servis</label>

@@ -23,25 +23,29 @@ class JasaServisController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.jasa.index', compact('jasaServis', 'search'));
+        $kodeOtomatis = JasaServis::generateNextKode();
+
+        return view('admin.jasa.index', compact('jasaServis', 'search', 'kodeOtomatis'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'kode_jasa' => ['required', 'string', 'max:50', 'unique:jasa_servis,kode_jasa'],
+            'kode_jasa' => ['nullable', 'string', 'max:50'],
             'nama_jasa' => ['required', 'string', 'max:255'],
             'harga' => ['required', 'numeric', 'min:0'],
         ], [
-            'kode_jasa.required' => 'Kode jasa wajib diisi.',
-            'kode_jasa.unique' => 'Kode jasa tersebut sudah ada.',
             'nama_jasa.required' => 'Nama jasa servis wajib diisi.',
             'harga.required' => 'Harga tarif servis wajib diisi.',
             'harga.min' => 'Harga tarif tidak boleh negatif.',
         ]);
 
+        $kodeJasa = !empty($validated['kode_jasa']) && !JasaServis::where('kode_jasa', strtoupper($validated['kode_jasa']))->exists()
+            ? strtoupper($validated['kode_jasa'])
+            : JasaServis::generateNextKode();
+
         JasaServis::create([
-            'kode_jasa' => strtoupper($validated['kode_jasa']),
+            'kode_jasa' => $kodeJasa,
             'nama_jasa' => $validated['nama_jasa'],
             'harga' => $validated['harga'],
             'is_active' => true,
@@ -75,9 +79,12 @@ class JasaServisController extends Controller
 
     public function destroy(JasaServis $jasa): RedirectResponse
     {
-        $jasa->update(['is_active' => false]);
-
-        return back()->with('success', 'Status jasa servis berhasil diubah menjadi nonaktif.');
+        try {
+            $jasa->delete();
+            return back()->with('success', 'Data jasa servis berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Data jasa servis tidak dapat dihapus karena masih terkait dengan data transaksi.');
+        }
     }
 }
 

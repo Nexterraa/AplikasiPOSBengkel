@@ -82,15 +82,13 @@
                                 <a href="{{ route('admin.spareparts.edit', $sp->id) }}" class="btn btn-sm btn-outline-primary me-1">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </a>
-                                @if($sp->is_active)
-                                    <form action="{{ route('admin.spareparts.destroy', $sp->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan sparepart ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-eye-slash me-1"></i> Nonaktifkan
-                                        </button>
-                                    </form>
-                                @endif
+                                <form action="{{ route('admin.spareparts.destroy', $sp->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus sparepart ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash me-1"></i> Hapus
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty

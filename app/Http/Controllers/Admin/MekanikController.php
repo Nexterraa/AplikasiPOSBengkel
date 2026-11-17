@@ -60,9 +60,12 @@ class MekanikController extends Controller
 
     public function destroy(Mekanik $mekanik): RedirectResponse
     {
-        $mekanik->update(['is_active' => false]);
-
-        return back()->with('success', 'Status mekanik berhasil diubah menjadi nonaktif.');
+        try {
+            $mekanik->delete();
+            return back()->with('success', 'Data mekanik berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Data mekanik tidak dapat dihapus karena masih terkait dengan data transaksi.');
+        }
     }
 }
 
