@@ -79,7 +79,7 @@
                             </td>
                             <td class="text-end pe-3">
                                 <a href="{{ route('customers.show', $customer) }}" class="btn btn-sm btn-outline-info me-1" title="Lihat Detail & Kendaraan">
-                                    <i class="bi bi-eye"></i>
+                                    <i class="bi bi-eye me-1"></i> Detail
                                 </a>
                                 <a href="{{ route('customers.edit', $customer) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit Data">
                                     <i class="bi bi-pencil"></i>
