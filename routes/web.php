@@ -60,7 +60,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('mekanik', MekanikController::class)->except(['create', 'edit']);
 
         // Kelola Akun Kasir
-        Route::resource('kasir', KasirAccountController::class)->only(['index', 'store', 'update']);
+        Route::resource('kasir', KasirAccountController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::patch('kasir/{kasir}/toggle-status', [KasirAccountController::class, 'toggleStatus'])->name('kasir.toggleStatus');
 
         // Manajemen Stok

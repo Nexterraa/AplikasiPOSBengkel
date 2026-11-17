@@ -58,18 +58,12 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditKasir{{ $ksr->id }}">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </button>
-                                <form action="{{ route('admin.kasir.toggleStatus', $ksr->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengubah status aktif akun kasir ini?')">
+                                <form action="{{ route('admin.kasir.destroy', $ksr->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun kasir ini?')">
                                     @csrf
-                                    @method('PATCH')
-                                    @if($ksr->is_active)
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-person-x me-1"></i> Nonaktifkan
-                                        </button>
-                                    @else
-                                        <button type="submit" class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-person-check me-1"></i> Aktifkan
-                                        </button>
-                                    @endif
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash me-1"></i> Hapus
+                                    </button>
                                 </form>
                             </td>
                         </tr>

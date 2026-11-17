@@ -56,15 +56,13 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditMekanik{{ $mek->id }}">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </button>
-                                @if($mek->is_active)
-                                    <form action="{{ route('admin.mekanik.destroy', $mek->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan mekanik ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-eye-slash"></i> Nonaktifkan
-                                        </button>
-                                    </form>
-                                @endif
+                                <form action="{{ route('admin.mekanik.destroy', $mek->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data mekanik ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash me-1"></i> Hapus
+                                    </button>
+                                </form>
                             </td>
                         </tr>
 

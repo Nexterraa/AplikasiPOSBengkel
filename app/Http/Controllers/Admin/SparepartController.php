@@ -40,14 +40,15 @@ class SparepartController extends Controller
     public function create(): View
     {
         $kategoris = Kategori::where('is_active', true)->orderBy('nama_kategori')->get();
+        $kodeOtomatis = Sparepart::generateNextKode();
 
-        return view('admin.sparepart.create', compact('kategoris'));
+        return view('admin.sparepart.create', compact('kategoris', 'kodeOtomatis'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'kode_sparepart' => ['required', 'string', 'max:50', 'unique:spareparts,kode_sparepart'],
+            'kode_sparepart' => ['nullable', 'string', 'max:50'],
             'nama_sparepart' => ['required', 'string', 'max:255'],
             'merek' => ['nullable', 'string', 'max:100'],
             'kategori_id' => ['required', 'exists:kategoris,id'],
@@ -56,8 +57,6 @@ class SparepartController extends Controller
             'stok' => ['required', 'integer', 'min:0'],
             'stok_minimum' => ['required', 'integer', 'min:0'],
         ], [
-            'kode_sparepart.required' => 'Kode sparepart wajib diisi.',
-            'kode_sparepart.unique' => 'Kode sparepart tersebut sudah digunakan.',
             'nama_sparepart.required' => 'Nama sparepart wajib diisi.',
             'kategori_id.required' => 'Kategori wajib dipilih.',
             'kategori_id.exists' => 'Kategori yang dipilih tidak valid.',
@@ -68,8 +67,12 @@ class SparepartController extends Controller
             'stok_minimum.required' => 'Stok minimum wajib diisi.',
         ]);
 
+        $kodeSparepart = !empty($validated['kode_sparepart']) && !Sparepart::where('kode_sparepart', strtoupper($validated['kode_sparepart']))->exists()
+            ? strtoupper($validated['kode_sparepart'])
+            : Sparepart::generateNextKode();
+
         Sparepart::create([
-            'kode_sparepart' => strtoupper($validated['kode_sparepart']),
+            'kode_sparepart' => $kodeSparepart,
             'nama_sparepart' => $validated['nama_sparepart'],
             'merek' => $validated['merek'],
             'kategori_id' => $validated['kategori_id'],
@@ -125,9 +128,12 @@ class SparepartController extends Controller
 
     public function destroy(Sparepart $sparepart): RedirectResponse
     {
-        $sparepart->update(['is_active' => false]);
-
-        return back()->with('success', 'Status sparepart berhasil diubah menjadi nonaktif.');
+        try {
+            $sparepart->delete();
+            return back()->with('success', 'Data sparepart berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Data sparepart tidak dapat dihapus karena masih terkait dengan data transaksi atau stok.');
+        }
     }
 }
 
