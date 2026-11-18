@@ -476,5 +476,128 @@ class TransactionTest extends TestCase
         $this->assertEquals($todayPrefix . '0002', $transactions[1]->no_transaksi);
         $this->assertNotEquals($transactions[0]->no_transaksi, $transactions[1]->no_transaksi);
     }
+
+    public function test_unpaid_transaction_can_be_cancelled(): void
+    {
+        $trx = Transaction::create([
+            'no_transaksi' => 'INV-20261022-0050',
+            'no_invoice' => 'INV-20261022-0050',
+            'user_id' => $this->kasir->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'status' => 'belum_dibayar',
+            'total' => 45000,
+        ]);
+
+        TransactionDetail::create([
+            'transaction_id' => $trx->id,
+            'item_type' => 'sparepart',
+            'sparepart_id' => $this->sparepart->id,
+            'nama_item' => $this->sparepart->nama_sparepart,
+            'jenis_harga' => 'satuan',
+            'harga' => 45000,
+            'jumlah' => 1,
+            'subtotal' => 45000,
+        ]);
+
+        $stokAwal = $this->sparepart->fresh()->stok;
+
+        $response = $this->actingAs($this->kasir)->post(route('transactions.cancel', $trx), [
+            'alasan_batal' => 'Pelanggan tidak jadi servis',
+        ]);
+
+        $response->assertRedirect(route('transactions.show', $trx));
+        $response->assertSessionHas('success');
+
+        // Status berubah menjadi dibatalkan dan data tidak terhapus
+        $this->assertDatabaseHas('transactions', [
+            'id' => $trx->id,
+            'status' => 'dibatalkan',
+            'alasan_batal' => 'Pelanggan tidak jadi servis',
+        ]);
+
+        // Karena belum dibayar, stok sparepart tidak berubah
+        $this->assertEquals($stokAwal, $this->sparepart->fresh()->stok);
+    }
+
+    public function test_paid_transaction_cancellation_restores_sparepart_stock_and_creates_stock_movement(): void
+    {
+        // 1. Buat transaksi dengan 2 sparepart
+        $trx = Transaction::create([
+            'no_transaksi' => 'INV-20261022-0051',
+            'no_invoice' => 'INV-20261022-0051',
+            'user_id' => $this->kasir->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'status' => 'belum_dibayar',
+            'total' => 90000,
+        ]);
+
+        TransactionDetail::create([
+            'transaction_id' => $trx->id,
+            'item_type' => 'sparepart',
+            'sparepart_id' => $this->sparepart->id,
+            'nama_item' => $this->sparepart->nama_sparepart,
+            'jenis_harga' => 'satuan',
+            'harga' => 45000,
+            'jumlah' => 2,
+            'subtotal' => 90000,
+        ]);
+
+        // Stok awal 20
+        $this->assertEquals(20, $this->sparepart->fresh()->stok);
+
+        // 2. Bayar transaksi sehingga status lunas dan stok berkurang menjadi 18
+        $this->actingAs($this->kasir)->post(route('transactions.pay', $trx), [
+            'metode' => 'cash',
+            'jumlah_diterima' => 100000,
+        ]);
+
+        $this->assertEquals('lunas', $trx->fresh()->status);
+        $this->assertEquals(18, $this->sparepart->fresh()->stok);
+
+        // 3. Batalkan transaksi lunas
+        $response = $this->actingAs($this->kasir)->post(route('transactions.cancel', $trx), [
+            'alasan_batal' => 'Pelanggan minta refund karena salah tipe oli',
+        ]);
+
+        $response->assertRedirect(route('transactions.show', $trx));
+        $response->assertSessionHas('success');
+
+        // Status berubah menjadi dibatalkan
+        $this->assertEquals('dibatalkan', $trx->fresh()->status);
+        $this->assertEquals('Pelanggan minta refund karena salah tipe oli', $trx->fresh()->alasan_batal);
+
+        // Stok sparepart otomatis dikembalikan (18 + 2 = 20)
+        $this->assertEquals(20, $this->sparepart->fresh()->stok);
+
+        // Catatan stock movement pembalikan stok tersimpan
+        $this->assertDatabaseHas('stock_movements', [
+            'sparepart_id' => $this->sparepart->id,
+            'jenis' => 'masuk',
+            'jumlah' => 2,
+            'stok_sebelum' => 18,
+            'stok_sesudah' => 20,
+        ]);
+    }
+
+    public function test_cancelled_transaction_cannot_be_cancelled_again(): void
+    {
+        $trx = Transaction::create([
+            'no_transaksi' => 'INV-20261022-0052',
+            'no_invoice' => 'INV-20261022-0052',
+            'user_id' => $this->kasir->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'status' => 'dibatalkan',
+            'total' => 50000,
+        ]);
+
+        $response = $this->actingAs($this->kasir)->post(route('transactions.cancel', $trx), [
+            'alasan_batal' => 'Coba batalkan lagi',
+        ]);
+
+        $response->assertSessionHas('error');
+    }
 }
 

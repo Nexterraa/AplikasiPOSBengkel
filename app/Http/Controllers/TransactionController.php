@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\JasaServis;
 use App\Models\Mekanik;
 use App\Models\Sparepart;
+use App\Models\StockMovement;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\Vehicle;
@@ -518,6 +519,66 @@ class TransactionController extends Controller
 
             return redirect()->route('transactions.show', $transaction)
                 ->with('success', "Transaksi {$transaction->no_transaksi} berhasil diperbarui.");
+        });
+    }
+
+    /**
+     * Batalkan transaksi secara atomik dan kembalikan stok jika berstatus lunas.
+     */
+    public function cancel(Request $request, Transaction $transaction): RedirectResponse
+    {
+        $request->validate([
+            'alasan_batal' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        return DB::transaction(function () use ($request, $transaction) {
+            $trx = Transaction::where('id', $transaction->id)->lockForUpdate()->firstOrFail();
+
+            if ($trx->isDibatalkan()) {
+                return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya dan tidak dapat dibatalkan lagi.');
+            }
+
+            $alasan = $request->input('alasan_batal') ?: 'Dibatalkan oleh kasir/admin';
+
+            // Jika transaksi sudah lunas, kembalikan stok sparepart dan catat stock movement
+            if ($trx->isLunas()) {
+                $sparepartDetails = $trx->sparepartDetails()->get();
+
+                foreach ($sparepartDetails as $detail) {
+                    if ($detail->sparepart_id) {
+                        $sparepart = Sparepart::where('id', $detail->sparepart_id)->lockForUpdate()->first();
+                        if ($sparepart) {
+                            $stokSebelum = $sparepart->stok;
+                            $stokSesudah = $stokSebelum + $detail->jumlah;
+
+                            $sparepart->update(['stok' => $stokSesudah]);
+
+                            StockMovement::create([
+                                'sparepart_id' => $sparepart->id,
+                                'user_id'      => Auth::id() ?? 1,
+                                'jenis'        => 'masuk',
+                                'jumlah'       => $detail->jumlah,
+                                'stok_sebelum' => $stokSebelum,
+                                'stok_sesudah' => $stokSesudah,
+                                'catatan'      => "Pengembalian stok pembatalan transaksi {$trx->no_transaksi}. Alasan: {$alasan}",
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            $updateData = [
+                'status' => 'dibatalkan',
+            ];
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('transactions', 'alasan_batal')) {
+                $updateData['alasan_batal'] = $alasan;
+            }
+
+            $trx->update($updateData);
+
+            return redirect()->route('transactions.show', $trx)
+                ->with('success', "Transaksi {$trx->no_transaksi} berhasil dibatalkan.");
         });
     }
 }

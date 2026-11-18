@@ -28,6 +28,7 @@
                     <option value="">-- Semua Status --</option>
                     <option value="belum_dibayar" {{ $status === 'belum_dibayar' ? 'selected' : '' }}>BELUM DIBAYAR</option>
                     <option value="lunas" {{ $status === 'lunas' ? 'selected' : '' }}>LUNAS</option>
+                    <option value="dibatalkan" {{ $status === 'dibatalkan' ? 'selected' : '' }}>DIBATALKAN</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -93,6 +94,10 @@
                                 @elseif ($trx->isLunas())
                                     <span class="badge bg-success px-2 py-1">
                                         <i class="bi bi-check-circle me-1"></i> LUNAS
+                                    </span>
+                                @elseif ($trx->isDibatalkan())
+                                    <span class="badge bg-danger px-2 py-1">
+                                        <i class="bi bi-x-circle me-1"></i> DIBATALKAN
                                     </span>
                                 @else
                                     <span class="badge bg-secondary px-2 py-1 text-uppercase">
