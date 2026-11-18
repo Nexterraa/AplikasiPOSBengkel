@@ -23,6 +23,7 @@ class Transaction extends Model
         'mekanik_id',
         'keluhan',
         'status',
+        'alasan_batal',
         'total',
     ];
 
@@ -94,6 +95,11 @@ class Transaction extends Model
     public function isLunas(): bool
     {
         return strtolower($this->status) === 'lunas';
+    }
+
+    public function isDibatalkan(): bool
+    {
+        return in_array(strtolower($this->status), ['dibatalkan', 'batal']);
     }
 }
 

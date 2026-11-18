@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('customers', CustomerController::class);
         Route::resource('vehicles', VehicleController::class);
         Route::resource('transactions', TransactionController::class)->except(['destroy']);
+        Route::post('transactions/{transaction}/cancel', [TransactionController::class, 'cancel'])->name('transactions.cancel');
         Route::get('transactions/{transaction}/payment', [PaymentController::class, 'create'])->name('transactions.payment');
         Route::post('transactions/{transaction}/pay', [PaymentController::class, 'store'])->name('transactions.pay');
         Route::get('transactions/{transaction}/invoice', [PaymentController::class, 'invoice'])->name('transactions.invoice');

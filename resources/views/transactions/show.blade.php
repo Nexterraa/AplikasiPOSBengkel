@@ -15,6 +15,10 @@
                 <span class="badge bg-success px-3 py-1">
                     <i class="bi bi-check-circle me-1"></i> LUNAS
                 </span>
+            @elseif ($transaction->isDibatalkan())
+                <span class="badge bg-danger px-3 py-1">
+                    <i class="bi bi-x-circle me-1"></i> DIBATALKAN
+                </span>
             @else
                 <span class="badge bg-secondary px-3 py-1 text-uppercase">
                     {{ $transaction->status }}
@@ -34,10 +38,16 @@
             <a href="{{ route('transactions.payment', $transaction) }}" class="btn btn-success btn-sm">
                 <i class="bi bi-credit-card me-1"></i> Proses Pembayaran
             </a>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalBatalTransaksi">
+                <i class="bi bi-x-circle me-1"></i> Batalkan
+            </button>
         @elseif ($transaction->isLunas())
             <a href="{{ route('transactions.invoice', $transaction) }}" class="btn btn-primary btn-sm">
                 <i class="bi bi-printer me-1"></i> Cetak Invoice
             </a>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalBatalTransaksi">
+                <i class="bi bi-x-circle me-1"></i> Batalkan Transaksi
+            </button>
         @endif
     </div>
 </div>
@@ -168,12 +178,22 @@
                         @if ($transaction->isBelumDibayar())
                             <div class="p-3 bg-light rounded-3 border-start border-4 border-warning">
                                 <div class="fw-bold text-dark small"><i class="bi bi-info-circle me-1 text-warning"></i> Status: Belum Dibayar</div>
-                                <div class="text-muted small">Transaksi dapat diedit atau dibayar selama belum lunas.</div>
+                                <div class="text-muted small">Transaksi dapat diedit, dibayar, atau dibatalkan.</div>
                             </div>
-                        @else
+                        @elseif ($transaction->isLunas())
                             <div class="p-3 bg-light rounded-3 border-start border-4 border-success">
                                 <div class="fw-bold text-success small"><i class="bi bi-check-circle me-1"></i> Status: Lunas</div>
-                                <div class="text-muted small">Transaksi ini telah lunas dan terkunci dari perubahan.</div>
+                                <div class="text-muted small">Transaksi ini telah lunas. Jika dibatalkan, stok sparepart akan otomatis dikembalikan.</div>
+                            </div>
+                        @elseif ($transaction->isDibatalkan())
+                            <div class="p-3 bg-light rounded-3 border-start border-4 border-danger">
+                                <div class="fw-bold text-danger small"><i class="bi bi-x-circle me-1"></i> Status: Dibatalkan</div>
+                                <div class="text-muted small">
+                                    Transaksi ini telah dibatalkan dan terkunci dari perubahan.
+                                    @if ($transaction->alasan_batal)
+                                        <br><strong>Alasan:</strong> {{ $transaction->alasan_batal }}
+                                    @endif
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -188,5 +208,42 @@
         </div>
     </div>
 </div>
+
+@if (!$transaction->isDibatalkan())
+    <!-- Modal Konfirmasi Pembatalan Transaksi -->
+    <div class="modal fade" id="modalBatalTransaksi" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('transactions.cancel', $transaction) }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i> Konfirmasi Pembatalan
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        <p class="mb-2">Apakah Anda yakin ingin membatalkan transaksi <strong>{{ $transaction->no_transaksi }}</strong>?</p>
+                        @if ($transaction->isLunas())
+                            <div class="alert alert-warning small mb-3">
+                                <i class="bi bi-info-circle me-1"></i> <strong>Perhatian:</strong> Transaksi ini sudah berstatus <strong>LUNAS</strong>. Membatalkannya akan otomatis <strong>mengembalikan seluruh stok sparepart</strong> terkait ke gudang.
+                            </div>
+                        @endif
+                        <div class="mb-3">
+                            <label for="alasan_batal" class="form-label fw-semibold">Alasan Pembatalan (Opsional)</label>
+                            <textarea name="alasan_batal" id="alasan_batal" class="form-control" rows="2" placeholder="Contoh: Pelanggan membatalkan pesanan / salah input"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-danger fw-semibold">
+                            <i class="bi bi-x-circle me-1"></i> Ya, Batalkan Transaksi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endif
 @endsection
 
