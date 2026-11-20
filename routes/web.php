@@ -78,14 +78,39 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'kasir'])->name('dashboard');
     });
 
-    // Manajemen Pelanggan, Kendaraan, dan Transaksi (Dapat diakses oleh Admin & Kasir)
+    // Pelanggan & Kendaraan (Admin dan Kasir bisa akses)
     Route::middleware('role:admin,kasir')->group(function () {
         Route::resource('customers', CustomerController::class);
         Route::resource('vehicles', VehicleController::class);
-        Route::resource('transactions', TransactionController::class)->except(['destroy']);
-        Route::post('transactions/{transaction}/cancel', [TransactionController::class, 'cancel'])->name('transactions.cancel');
+    });
+
+    // 1. Transaksi Baru (Hanya Kasir — ditaruh sebelum wildcard {transaction})
+    Route::middleware('role:kasir')->group(function () {
+        Route::get('transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
+        Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    });
+
+    // 2. Daftar & Detail Transaksi (Admin & Kasir)
+    Route::middleware('role:admin,kasir')->group(function () {
+        Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+        Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
         Route::get('transactions/{transaction}/payment', [PaymentController::class, 'create'])->name('transactions.payment');
         Route::post('transactions/{transaction}/pay', [PaymentController::class, 'store'])->name('transactions.pay');
         Route::get('transactions/{transaction}/invoice', [PaymentController::class, 'invoice'])->name('transactions.invoice');
+    });
+
+    // 3. Edit, Batal & AJAX Kendaraan (Hanya Kasir)
+    Route::middleware('role:kasir')->group(function () {
+        Route::get('transactions/{transaction}/edit', [TransactionController::class, 'edit'])->name('transactions.edit');
+        Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+        Route::post('transactions/{transaction}/cancel', [TransactionController::class, 'cancel'])->name('transactions.cancel');
+        // AJAX: live search plat nomor untuk auto-fill data kendaraan
+        Route::get('api/cari-kendaraan', [TransactionController::class, 'cariKendaraan'])->name('api.cari-kendaraan');
+    });
+
+    // Alias route transaksi admin untuk kemudahan navigasi
+    Route::middleware('role:admin')->prefix('admin')->as('admin.')->group(function () {
+        Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+        Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
     });
 });

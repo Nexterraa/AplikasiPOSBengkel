@@ -99,7 +99,7 @@ class TransactionTest extends TestCase
     public function test_admin_and_kasir_can_access_transaction_pages(): void
     {
         $this->actingAs($this->admin)->get('/transactions')->assertStatus(200);
-        $this->actingAs($this->admin)->get('/transactions/create')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/transactions/create')->assertStatus(403); // Admin tidak boleh membuat transaksi
 
         $this->actingAs($this->kasir)->get('/transactions')->assertStatus(200);
         $this->actingAs($this->kasir)->get('/transactions/create')->assertStatus(200);

@@ -36,50 +36,80 @@
                 <div class="card-header bg-white fw-bold py-3 border-bottom d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-bicycle me-2 text-primary"></i> Kendaraan & Pelanggan</span>
                     <div class="form-check form-switch mb-0 small">
-                        <input class="form-check-input" type="checkbox" id="toggleNewVehicle" name="is_new_vehicle" value="1" {{ old('is_new_vehicle') ? 'checked' : '' }}>
-                        <label class="form-check-label text-muted" for="toggleNewVehicle">Kendaraan Baru</label>
+                        <input class="form-check-input" type="checkbox" id="toggleNewVehicle" name="is_new_vehicle" value="1" {{ (old('is_new_vehicle') || old('plate_number')) ? 'checked' : '' }}>
+                        <label class="form-check-label text-muted fw-normal" for="toggleNewVehicle" id="labelToggleVehicle">
+                            {{ (old('is_new_vehicle') || old('plate_number')) ? 'Kendaraan Baru' : 'Cari Terdaftar' }}
+                        </label>
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Mode 1: Pilih Kendaraan yang Sudah Terdaftar -->
-                    <div id="sectionExistingVehicle" style="{{ old('is_new_vehicle') ? 'display: none;' : '' }}">
+                    <!-- MODE 1: PENCARIAN KENDARAAN TERDAFTAR (Switch OFF) -->
+                    <div id="sectionCariKendaraan">
                         <div class="mb-3">
-                            <label class="form-label fw-semibold small">Pilih Kendaraan Terdaftar <span class="text-danger">*</span></label>
-                            <select name="vehicle_id" id="vehicleSelect" class="form-select @error('vehicle_id') is-invalid @enderror">
-                                <option value="">-- Cari / Pilih Plat Nomor Kendaraan --</option>
-                                @foreach ($vehicles as $v)
-                                    <option value="{{ $v->id }}" 
-                                        data-customer-id="{{ $v->customer_id }}"
-                                        data-customer-name="{{ $v->customer->name ?? '-' }}"
-                                        data-customer-phone="{{ $v->customer->phone ?? '-' }}"
-                                        data-brand="{{ $v->brand }}"
-                                        data-model="{{ $v->model }}"
-                                        data-year="{{ $v->year }}"
-                                        {{ (old('vehicle_id', $selectedVehicleId) == $v->id) ? 'selected' : '' }}>
-                                        {{ $v->plate_number }} ({{ $v->brand }} {{ $v->model }}) — {{ $v->customer->name ?? 'Tanpa Pemilik' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('vehicle_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-search me-1 text-primary"></i>
+                                Cari Kendaraan Berdasarkan Plat Nomor
+                            </label>
+                            <div class="input-group">
+                                <input
+                                    type="text"
+                                    id="inputCariPlat"
+                                    class="form-control text-uppercase font-monospace"
+                                    placeholder="Ketik plat nomor, contoh: B 1234 ABC"
+                                    autocomplete="off"
+                                >
+                                <button type="button" class="btn btn-outline-secondary" id="btnResetCari" title="Reset Pencarian" style="display:none">
+                                    <i class="bi bi-x-circle"></i> Reset
+                                </button>
+                            </div>
+                            <div class="form-text small" id="infoSearchStatus">
+                                Ketik plat nomor untuk mencari kendaraan yang sudah terdaftar di sistem.
+                            </div>
                         </div>
 
-                        <!-- Info Ringkas Pemilik dari Kendaraan Terpilih -->
-                        <div id="existingCustomerInfo" class="p-3 bg-light rounded-3 border mb-3" style="display: none;">
-                            <div class="small text-muted mb-1"><i class="bi bi-person-circle me-1"></i> Data Pemilik Kendaraan:</div>
-                            <div class="fw-bold" id="infoCustomerName">-</div>
-                            <div class="small text-muted" id="infoCustomerPhone">-</div>
-                            <div class="small text-secondary mt-1" id="infoVehicleDetail">-</div>
-                            <input type="hidden" name="customer_id" id="hiddenCustomerId" value="{{ old('customer_id') }}">
+                        <!-- HASIL PENCARIAN: Muncul saat kendaraan ditemukan (auto-fill) -->
+                        <div id="sectionKendaraanDitemukan" style="display:none">
+                            <div class="alert alert-success py-2 px-3 mb-3 small d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                                <div>
+                                    <strong>Kendaraan Terdaftar Ditemukan!</strong><br>
+                                    Data kendaraan dan pemilik berhasil terisi otomatis.
+                                </div>
+                            </div>
+                            <!-- Input tersembunyi untuk data yang ditemukan -->
+                            <input type="hidden" name="vehicle_id" id="hiddenVehicleId" value="{{ old('vehicle_id', $selectedVehicleId) }}">
+                            <input type="hidden" name="customer_id" id="hiddenCustomerId" value="{{ old('customer_id', $selectedCustomerId) }}">
+                            <!-- Info ringkas kendaraan dan pelanggan yang ditemukan -->
+                            <div class="p-3 bg-light rounded-3 border mb-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <div class="small text-muted">Nomor Polisi:</div>
+                                        <div class="fw-bold font-monospace text-primary fs-5" id="infoPlat">-</div>
+                                    </div>
+                                    <span class="badge bg-success">Terdaftar</span>
+                                </div>
+                                <div class="small text-secondary mb-2" id="infoKendaraan">-</div>
+                                <hr class="my-2">
+                                <div class="small text-muted mb-1"><i class="bi bi-person-circle me-1"></i> Data Pemilik:</div>
+                                <div class="fw-bold" id="infoNamaPemilik">-</div>
+                                <div class="small text-muted" id="infoTeleponPemilik">-</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Mode 2: Input Kendaraan Baru & Pemilik Baru/Lama -->
-                    <div id="sectionNewVehicle" style="{{ old('is_new_vehicle') ? '' : 'display: none;' }}">
+                    <!-- MODE 2: FORM TAMBAH DATA KENDARAAN & PELANGGAN BARU (Switch ON) -->
+                    <div id="sectionKendaraanBaru" style="display:none">
+                        <div class="alert alert-warning py-2 px-3 mb-3 small d-flex align-items-center">
+                            <i class="bi bi-plus-circle-fill me-2 fs-5"></i>
+                            <div>
+                                <strong>Form Kendaraan & Pelanggan Baru</strong><br>
+                                Masukkan rincian motor dan data pemilik yang belum terdaftar.
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label fw-semibold small">Nomor Polisi (Plat Nomor) <span class="text-danger">*</span></label>
-                            <input type="text" name="plate_number" id="inputPlateNumber" class="form-control text-uppercase font-monospace @error('plate_number') is-invalid @enderror" placeholder="Contoh: B 1234 ABC" value="{{ old('plate_number') }}">
+                            <input type="text" name="plate_number" id="inputNewPlateNumber" class="form-control text-uppercase font-monospace @error('plate_number') is-invalid @enderror" placeholder="Contoh: B 1234 ABC" value="{{ old('plate_number') }}">
                             @error('plate_number')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -88,39 +118,51 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label fw-semibold small">Merek <span class="text-danger">*</span></label>
-                                <input type="text" name="brand" class="form-control @error('brand') is-invalid @enderror" placeholder="Honda, Yamaha..." value="{{ old('brand') }}">
+                                <input type="text" name="brand" id="inputBrand" class="form-control @error('brand') is-invalid @enderror" placeholder="Honda, Yamaha..." value="{{ old('brand') }}">
+                                @error('brand')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold small">Model/Tipe <span class="text-danger">*</span></label>
-                                <input type="text" name="model" class="form-control @error('model') is-invalid @enderror" placeholder="Vario 150, NMAX..." value="{{ old('model') }}">
+                                <input type="text" name="model" id="inputModel" class="form-control @error('model') is-invalid @enderror" placeholder="Vario 150, NMAX..." value="{{ old('model') }}">
+                                @error('model')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold small">Tahun Pembuatan</label>
-                            <input type="number" name="year" class="form-control @error('year') is-invalid @enderror" placeholder="{{ date('Y') }}" value="{{ old('year') }}">
-                        </div>
-
-                        <hr class="my-3">
-
-                        <h6 class="fw-bold small text-muted text-uppercase mb-2"><i class="bi bi-person-fill me-1"></i> Pemilik Kendaraan Baru</h6>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold small">Nama Pelanggan / Pemilik <span class="text-danger">*</span></label>
-                            <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" placeholder="Nama lengkap pelanggan" value="{{ old('customer_name') }}">
-                            @error('customer_name')
+                            <input type="number" name="year" id="inputYear" class="form-control @error('year') is-invalid @enderror" placeholder="{{ date('Y') }}" value="{{ old('year') }}">
+                            @error('year')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
+                        <hr class="my-3">
+                        <h6 class="fw-bold small text-muted text-uppercase mb-2"><i class="bi bi-person-fill me-1"></i> Data Pemilik Kendaraan</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Nama Pelanggan / Pemilik <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" id="inputCustomerName" class="form-control @error('customer_name') is-invalid @enderror" placeholder="Nama lengkap pelanggan" value="{{ old('customer_name') }}">
+                            @error('customer_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold small">Nomor Telepon / WhatsApp</label>
-                            <input type="text" name="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror" placeholder="08xxxxxxxxxx" value="{{ old('customer_phone') }}">
+                            <input type="text" name="customer_phone" id="inputCustomerPhone" class="form-control @error('customer_phone') is-invalid @enderror" placeholder="08xxxxxxxxxx" value="{{ old('customer_phone') }}">
                             @error('customer_phone')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
+
+                    <!-- Error dari validasi server untuk kendaraan/pelanggan -->
+                    @error('vehicle_id')
+                        <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
 
@@ -274,48 +316,147 @@ document.addEventListener('DOMContentLoaded', function () {
     const services = window.POS_SERVICES || [];
     const spareparts = window.POS_SPAREPARTS || [];
 
-    // Toggle Mode Kendaraan
-    const toggleNewVehicle = document.getElementById('toggleNewVehicle');
-    const sectionExisting = document.getElementById('sectionExistingVehicle');
-    const sectionNew = document.getElementById('sectionNewVehicle');
-    const vehicleSelect = document.getElementById('vehicleSelect');
-    const existingCustomerInfo = document.getElementById('existingCustomerInfo');
-    const infoCustomerName = document.getElementById('infoCustomerName');
-    const infoCustomerPhone = document.getElementById('infoCustomerPhone');
-    const infoVehicleDetail = document.getElementById('infoVehicleDetail');
-    const hiddenCustomerId = document.getElementById('hiddenCustomerId');
+    // =========================================================
+    // TOGGLE & LIVE SEARCH PLAT NOMOR
+    // Switch: Cari Terdaftar <-> Input Kendaraan Baru
+    // =========================================================
+    const toggleNewVehicle    = document.getElementById('toggleNewVehicle');
+    const labelToggleVehicle  = document.getElementById('labelToggleVehicle');
+    const sectionCari         = document.getElementById('sectionCariKendaraan');
+    const sectionBaru         = document.getElementById('sectionKendaraanBaru');
+    const sectionDitemukan    = document.getElementById('sectionKendaraanDitemukan');
+
+    const inputCariPlat       = document.getElementById('inputCariPlat');
+    const btnResetCari        = document.getElementById('btnResetCari');
+    const infoSearchStatus    = document.getElementById('infoSearchStatus');
+
+    const hiddenVehicleId     = document.getElementById('hiddenVehicleId');
+    const hiddenCustomerId    = document.getElementById('hiddenCustomerId');
+
+    const inputNewPlate       = document.getElementById('inputNewPlateNumber');
+    const inputBrand          = document.getElementById('inputBrand');
+    const inputModel          = document.getElementById('inputModel');
+    const inputYear           = document.getElementById('inputYear');
+    const inputCustomerName   = document.getElementById('inputCustomerName');
+    const inputCustomerPhone  = document.getElementById('inputCustomerPhone');
+
+    // Info kendaraan yang ditemukan
+    const infoPlat            = document.getElementById('infoPlat');
+    const infoKendaraan       = document.getElementById('infoKendaraan');
+    const infoNamaPemilik     = document.getElementById('infoNamaPemilik');
+    const infoTeleponPemilik  = document.getElementById('infoTeleponPemilik');
+
+    let searchTimeout = null;
 
     function updateVehicleMode() {
         if (toggleNewVehicle.checked) {
-            sectionExisting.style.display = 'none';
-            sectionNew.style.display = 'block';
-            vehicleSelect.value = '';
-            existingCustomerInfo.style.display = 'none';
+            // Mode KENDARAAN BARU: Tampilkan form baru, sembunyikan pencarian
+            sectionCari.style.display = 'none';
+            sectionBaru.style.display = 'block';
+            labelToggleVehicle.textContent = 'Kendaraan Baru';
+
+            // Bersihkan ID kendaraan terdaftar agar server membuat kendaraan baru
+            hiddenVehicleId.value = '';
             hiddenCustomerId.value = '';
+
+            // Jika sebelumnya kasir mengetik plat di input pencarian, salin ke form baru
+            if (inputCariPlat && inputCariPlat.value.trim() && !inputNewPlate.value) {
+                inputNewPlate.value = inputCariPlat.value.trim().toUpperCase();
+            }
         } else {
-            sectionExisting.style.display = 'block';
-            sectionNew.style.display = 'none';
-            handleVehicleChange();
+            // Mode CARI KENDARAAN: Tampilkan pencarian plat, sembunyikan form baru
+            sectionCari.style.display = 'block';
+            sectionBaru.style.display = 'none';
+            labelToggleVehicle.textContent = 'Cari Terdaftar';
+
+            // Bersihkan field form baru
+            inputNewPlate.value = '';
         }
     }
 
-    function handleVehicleChange() {
-        const selected = vehicleSelect.options[vehicleSelect.selectedIndex];
-        if (selected && selected.value) {
-            infoCustomerName.textContent = selected.getAttribute('data-customer-name') || '-';
-            infoCustomerPhone.textContent = selected.getAttribute('data-customer-phone') || '-';
-            infoVehicleDetail.textContent = (selected.getAttribute('data-brand') || '') + ' ' + (selected.getAttribute('data-model') || '') + ' (' + (selected.getAttribute('data-year') || '-') + ')';
-            hiddenCustomerId.value = selected.getAttribute('data-customer-id') || '';
-            existingCustomerInfo.style.display = 'block';
+    toggleNewVehicle.addEventListener('change', function () {
+        updateVehicleMode();
+        if (toggleNewVehicle.checked) {
+            inputNewPlate.focus();
         } else {
-            existingCustomerInfo.style.display = 'none';
-            hiddenCustomerId.value = '';
+            inputCariPlat.focus();
         }
+    });
+
+    function resetForm() {
+        sectionDitemukan.style.display = 'none';
+        hiddenVehicleId.value = '';
+        hiddenCustomerId.value = '';
+        btnResetCari.style.display = 'none';
+        infoSearchStatus.textContent = 'Ketik plat nomor untuk mencari kendaraan yang sudah terdaftar di sistem.';
+        infoSearchStatus.className = 'form-text small';
     }
 
-    toggleNewVehicle.addEventListener('change', updateVehicleMode);
-    vehicleSelect.addEventListener('change', handleVehicleChange);
-    handleVehicleChange();
+    function tampilkanKendaraanDitemukan(data) {
+        hiddenVehicleId.value  = data.vehicle_id;
+        hiddenCustomerId.value = data.customer_id;
+        infoPlat.textContent          = data.plate;
+        infoKendaraan.textContent     = data.brand + ' ' + data.model + ' (' + data.year + ')';
+        infoNamaPemilik.textContent   = data.customer_name;
+        infoTeleponPemilik.textContent = data.customer_phone || 'Tidak ada telepon';
+
+        sectionDitemukan.style.display = 'block';
+        infoSearchStatus.textContent = '✓ Kendaraan terdaftar ditemukan dan data terisi otomatis.';
+        infoSearchStatus.className = 'form-text small text-success';
+        btnResetCari.style.display = 'inline-block';
+    }
+
+    // Event: Ketik di kolom plat — cari ke server dengan debounce 400ms
+    inputCariPlat.addEventListener('input', function () {
+        const plat = this.value.trim();
+        clearTimeout(searchTimeout);
+
+        if (plat.length < 2) {
+            resetForm();
+            return;
+        }
+
+        infoSearchStatus.textContent = 'Mencari kendaraan...';
+        infoSearchStatus.className = 'form-text small text-muted';
+
+        searchTimeout = setTimeout(function () {
+            fetch('{{ route("api.cari-kendaraan") }}?plat=' + encodeURIComponent(plat))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.found) {
+                        tampilkanKendaraanDitemukan(data);
+                    } else {
+                        // Jika tidak ditemukan, beri opsi langsung aktifkan switch kendaraan baru
+                        infoSearchStatus.innerHTML = `✗ Plat <strong>${plat.toUpperCase()}</strong> belum terdaftar. <a href="#" id="linkSwitchBaru" class="text-primary fw-semibold">Daftarkan sebagai kendaraan baru?</a>`;
+                        infoSearchStatus.className = 'form-text small text-warning';
+                        btnResetCari.style.display = 'inline-block';
+
+                        const linkSwitch = document.getElementById('linkSwitchBaru');
+                        if (linkSwitch) {
+                            linkSwitch.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                toggleNewVehicle.checked = true;
+                                updateVehicleMode();
+                            });
+                        }
+                    }
+                })
+                .catch(() => {
+                    infoSearchStatus.textContent = 'Gagal terhubung ke server. Coba lagi.';
+                    infoSearchStatus.className = 'form-text small text-danger';
+                });
+        }, 400);
+    });
+
+    // Tombol Reset: kembali ke kondisi awal
+    btnResetCari.addEventListener('click', function () {
+        inputCariPlat.value = '';
+        resetForm();
+        inputCariPlat.focus();
+    });
+
+    // Inisialisasi mode saat halaman pertama kali dimuat
+    updateVehicleMode();
 
     // Dinamis Jasa Servis
     const btnAddJasa = document.getElementById('btnAddJasa');

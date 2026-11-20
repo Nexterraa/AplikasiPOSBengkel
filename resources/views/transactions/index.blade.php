@@ -8,9 +8,12 @@
         <h4 class="fw-bold mb-1"><i class="bi bi-receipt me-2"></i> Riwayat Transaksi</h4>
         <p class="text-muted mb-0 small">Kelola dan pantau seluruh transaksi servis serta sparepart bengkel.</p>
     </div>
-    <a href="{{ route('transactions.create') }}" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
-        <i class="bi bi-cart-plus"></i> Transaksi Baru
-    </a>
+    @if (Auth::user()->isKasir())
+        {{-- Hanya kasir yang bisa buat transaksi baru, sesuai PRD --}}
+        <a href="{{ route('transactions.create') }}" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-cart-plus"></i> Transaksi Baru
+        </a>
+    @endif
 </div>
 
 <!-- Filter dan Pencarian -->
@@ -110,17 +113,19 @@
                                     <a href="{{ route('transactions.show', $trx) }}" class="btn btn-outline-primary" title="Lihat Detail">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if ($trx->isBelumDibayar())
-                                        <a href="{{ route('transactions.edit', $trx) }}" class="btn btn-outline-warning" title="Edit Transaksi">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a href="{{ route('transactions.payment', $trx) }}" class="btn btn-outline-success" title="Bayar">
-                                            <i class="bi bi-credit-card"></i>
-                                        </a>
-                                    @elseif ($trx->isLunas())
-                                        <a href="{{ route('transactions.invoice', $trx) }}" class="btn btn-outline-info" title="Invoice">
-                                            <i class="bi bi-printer"></i>
-                                        </a>
+                                    @if (Auth::user()->isKasir())
+                                        @if ($trx->isBelumDibayar())
+                                            <a href="{{ route('transactions.edit', $trx) }}" class="btn btn-outline-warning" title="Edit Transaksi">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{{ route('transactions.payment', $trx) }}" class="btn btn-outline-success" title="Bayar">
+                                                <i class="bi bi-credit-card"></i>
+                                            </a>
+                                        @elseif ($trx->isLunas())
+                                            <a href="{{ route('transactions.invoice', $trx) }}" class="btn btn-outline-info" title="Invoice">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                        @endif
                                     @endif
                                 </div>
                             </td>

@@ -2,90 +2,104 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use App\Models\Sparepart;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     /**
      * Dashboard untuk Role Admin.
+     * Menampilkan omzet seluruh bengkel, grafik, dan stok menipis.
      */
     public function admin(): View
     {
-        $hasTransaksiTable = Schema::hasTable('transactions') || Schema::hasTable('transaksi') || Schema::hasTable('transaksis');
-        $hasSparepartTable = Schema::hasTable('sparepart') || Schema::hasTable('spareparts');
+        // Hitung omzet dan jumlah transaksi lunas bulan ini
+        $totalOmzet = Transaction::where('status', 'lunas')
+            ->sum('total');
 
-        $transaksiTable = Schema::hasTable('transactions') ? 'transactions' : (Schema::hasTable('transaksi') ? 'transaksi' : 'transaksis');
-        $sparepartTable = Schema::hasTable('sparepart') ? 'sparepart' : 'spareparts';
+        $totalTransaksiLunas = Transaction::where('status', 'lunas')
+            ->count();
 
-        $totalOmzet = $hasTransaksiTable
-            ? (float) DB::table($transaksiTable)->whereIn('status', ['LUNAS', 'lunas'])->sum('total')
-            : 0;
+        $totalTransaksiBelumBayar = Transaction::where('status', 'belum_dibayar')
+            ->count();
 
-        $totalTransaksiLunas = $hasTransaksiTable
-            ? DB::table($transaksiTable)->whereIn('status', ['LUNAS', 'lunas'])->count()
-            : 0;
+        // Daftar sparepart yang stoknya menipis atau habis (untuk ditampilkan di dashboard)
+        $sparepartMenipis = Sparepart::where('is_active', true)
+            ->whereColumn('stok', '<=', 'stok_minimum')
+            ->orderBy('stok')
+            ->get();
 
-        $totalTransaksiBelumBayar = $hasTransaksiTable
-            ? DB::table($transaksiTable)->whereIn('status', ['BELUM DIBAYAR', 'belum_dibayar'])->count()
-            : 0;
+        $stokMenipisCount = $sparepartMenipis->count();
 
-        $stokMenipisCount = $hasSparepartTable
-            ? DB::table($sparepartTable)->whereColumn('stok', '<=', 'stok_minimum')->count()
-            : 0;
+        // 5 Transaksi terbaru (semua status)
+        $transaksiTerbaru = Transaction::with(['customer', 'vehicle', 'user'])
+            ->latest()
+            ->limit(5)
+            ->get();
 
-        $transaksiTerbaru = $hasTransaksiTable
-            ? DB::table($transaksiTable)->orderBy('created_at', 'desc')->limit(5)->get()
-            : collect();
+        // Data grafik penjualan 7 hari terakhir (untuk Chart.js)
+        // Format: ['label' => tanggal, 'total' => omzet]
+        $grafikData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $tanggal = now()->subDays($i)->format('Y-m-d');
+            $label   = now()->subDays($i)->format('d M');
+
+            $omzetHari = Transaction::where('status', 'lunas')
+                ->whereDate('updated_at', $tanggal) // updated_at berubah saat status jadi lunas
+                ->sum('total');
+
+            $grafikData[] = [
+                'label' => $label,
+                'total' => (float) $omzetHari,
+            ];
+        }
 
         return view('dashboard.admin', compact(
             'totalOmzet',
             'totalTransaksiLunas',
             'totalTransaksiBelumBayar',
             'stokMenipisCount',
-            'transaksiTerbaru'
+            'sparepartMenipis',
+            'transaksiTerbaru',
+            'grafikData'
         ));
     }
 
     /**
      * Dashboard untuk Role Kasir.
+     * Hanya menghitung transaksi yang dibuat kasir yang sedang login.
      */
     public function kasir(): View
     {
-        $hasTransaksiTable = Schema::hasTable('transactions') || Schema::hasTable('transaksi') || Schema::hasTable('transaksis');
-        $transaksiTable = Schema::hasTable('transactions') ? 'transactions' : (Schema::hasTable('transaksi') ? 'transaksi' : 'transaksis');
+        $kasirId = Auth::id();
+        $today   = now()->toDateString();
 
-        $today = date('Y-m-d');
+        // Omzet hari ini dari transaksi kasir ini yang lunas
+        $omzetHariIni = Transaction::where('status', 'lunas')
+            ->where('user_id', $kasirId)
+            ->whereDate('updated_at', $today)
+            ->sum('total');
 
-        $omzetHariIni = $hasTransaksiTable
-            ? (float) DB::table($transaksiTable)
-                ->whereIn('status', ['LUNAS', 'lunas'])
-                ->whereDate('created_at', $today)
-                ->sum('total')
-            : 0;
+        // Jumlah transaksi lunas hari ini dari kasir ini
+        $transaksiHariIniCount = Transaction::where('status', 'lunas')
+            ->where('user_id', $kasirId)
+            ->whereDate('updated_at', $today)
+            ->count();
 
-        $transaksiHariIniCount = $hasTransaksiTable
-            ? DB::table($transaksiTable)
-                ->whereIn('status', ['LUNAS', 'lunas'])
-                ->whereDate('created_at', $today)
-                ->count()
-            : 0;
+        // Jumlah transaksi yang belum dibayar hari ini dari kasir ini
+        $pendingHariIniCount = Transaction::where('status', 'belum_dibayar')
+            ->where('user_id', $kasirId)
+            ->whereDate('created_at', $today)
+            ->count();
 
-        $pendingHariIniCount = $hasTransaksiTable
-            ? DB::table($transaksiTable)
-                ->whereIn('status', ['BELUM DIBAYAR', 'belum_dibayar'])
-                ->whereDate('created_at', $today)
-                ->count()
-            : 0;
-
-        $transaksiTerbaru = $hasTransaksiTable
-            ? DB::table($transaksiTable)
-                ->whereDate('created_at', $today)
-                ->orderBy('created_at', 'desc')
-                ->limit(5)
-                ->get()
-            : collect();
+        // 5 transaksi terbaru dari kasir ini
+        $transaksiTerbaru = Transaction::with(['customer', 'vehicle'])
+            ->where('user_id', $kasirId)
+            ->latest()
+            ->limit(5)
+            ->get();
 
         return view('dashboard.kasir', compact(
             'omzetHariIni',

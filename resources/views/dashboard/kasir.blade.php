@@ -4,28 +4,18 @@
 
 @section('content')
 <!-- Header Welcome -->
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard Kasir</h3>
         <p class="text-muted mb-0">Selamat bekerja, <strong>{{ Auth::user()->name }}</strong></p>
     </div>
-    <span class="badge bg-primary fs-6 px-3 py-2 text-uppercase shadow-sm">
-        <i class="bi bi-person-badge me-1"></i> Kasir Active
-    </span>
-</div>
-
-<!-- Quick Action Banner -->
-<div class="card border-0 shadow-sm rounded-3 bg-gradient bg-primary text-white mb-4">
-    <div class="card-body p-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-        <div>
-            <h4 class="fw-bold mb-1"><i class="bi bi-cart-plus me-2"></i>Siap Memproses Transaksi?</h4>
-            <p class="mb-0 opacity-75">Kelola pelayanan servis motor & pembelian sparepart pelanggan dengan cepat.</p>
-        </div>
-        <div>
-            <button class="btn btn-light btn-lg px-4 py-2 fw-semibold text-primary shadow-sm" disabled>
-                <i class="bi bi-plus-circle me-1"></i> Transaksi Baru (Tahap 6)
-            </button>
-        </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary fs-6 px-3 py-2 text-uppercase shadow-sm">
+            <i class="bi bi-person-badge me-1"></i> Kasir Active
+        </span>
+        <a href="{{ route('transactions.create') }}" class="btn btn-success d-flex align-items-center gap-1 shadow-sm px-3 py-2">
+            <i class="bi bi-cart-plus-fill"></i> Transaksi Baru
+        </a>
     </div>
 </div>
 
@@ -107,15 +97,19 @@
                 <tbody>
                     @forelse ($transaksiTerbaru as $tx)
                         <tr>
-                            <td class="ps-3 fw-semibold">{{ $tx->no_invoice ?? '-' }}</td>
-                            <td>{{ isset($tx->created_at) ? date('H:i', strtotime($tx->created_at)) : '-' }}</td>
-                            <td>{{ $tx->nama_pelanggan ?? '-' }}</td>
+                            <td class="ps-3 fw-semibold">
+                                <a href="{{ route('transactions.show', $tx) }}" class="text-decoration-none text-primary">
+                                    {{ $tx->no_transaksi }}
+                                </a>
+                            </td>
+                            <td class="small text-muted">{{ $tx->created_at ? $tx->created_at->format('H:i') : '-' }}</td>
+                            <td>{{ $tx->customer->name ?? '-' }}</td>
                             <td class="fw-bold">Rp {{ number_format($tx->total ?? 0, 0, ',', '.') }}</td>
                             <td>
-                                @if (($tx->status ?? '') === 'LUNAS')
+                                @if ($tx->isLunas())
                                     <span class="badge bg-success">LUNAS</span>
-                                @elseif (($tx->status ?? '') === 'BATAL')
-                                    <span class="badge bg-secondary">BATAL</span>
+                                @elseif ($tx->isDibatalkan())
+                                    <span class="badge bg-danger">DIBATALKAN</span>
                                 @else
                                     <span class="badge bg-warning text-dark">BELUM DIBAYAR</span>
                                 @endif

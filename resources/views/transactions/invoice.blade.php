@@ -39,7 +39,7 @@
                 <i class="bi bi-check-circle-fill me-1"></i> LUNAS
             </span>
             <div class="small text-muted">Nomor Invoice:</div>
-            <div class="fs-5 fw-bold font-monospace text-primary">{{ $transaction->no_transaksi }}</div>
+            <div class="fs-5 fw-bold font-monospace text-primary">{{ $transaction->no_invoice ?? $transaction->no_transaksi }}</div>
             <div class="small text-secondary">{{ $transaction->created_at->format('d/m/Y H:i') }} WIB</div>
         </div>
     </div>

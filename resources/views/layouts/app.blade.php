@@ -115,12 +115,18 @@
                         </a>
 
                         <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Transaksi POS</div>
-                        <a href="{{ route('transactions.create') }}" class="list-group-item list-group-item-action {{ request()->routeIs('transactions.create') ? 'active' : '' }}">
-                            <i class="bi bi-cart-plus me-2"></i> Transaksi Baru
-                        </a>
-                        <a href="{{ route('transactions.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('transactions.index', 'transactions.show', 'transactions.edit') ? 'active' : '' }}">
-                            <i class="bi bi-receipt me-2"></i> Riwayat Transaksi
-                        </a>
+                        @if (Auth::user()->isKasir())
+                            <a href="{{ route('transactions.create') }}" class="list-group-item list-group-item-action {{ request()->routeIs('transactions.create') ? 'active' : '' }}">
+                                <i class="bi bi-cart-plus me-2"></i> Transaksi Baru
+                            </a>
+                            <a href="{{ route('transactions.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('transactions.index', 'transactions.show', 'transactions.edit') ? 'active' : '' }}">
+                                <i class="bi bi-receipt me-2"></i> Riwayat Transaksi
+                            </a>
+                        @else
+                            <a href="{{ route('admin.transactions.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}">
+                                <i class="bi bi-receipt me-2"></i> Riwayat Transaksi
+                            </a>
+                        @endif
 
                         <div class="list-group-item bg-light text-muted small fw-bold text-uppercase">Pengaturan</div>
                         <a href="{{ route('profile.edit') }}" class="list-group-item list-group-item-action {{ request()->routeIs('profile.edit') ? 'active' : '' }}">

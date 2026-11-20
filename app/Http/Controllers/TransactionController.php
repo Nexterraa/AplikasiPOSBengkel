@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\Vehicle;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -523,7 +524,9 @@ class TransactionController extends Controller
     }
 
     /**
-     * Batalkan transaksi secara atomik dan kembalikan stok jika berstatus lunas.
+     * Batalkan transaksi.
+     * Jika transaksi berstatus lunas, kembalikan stok sparepart dan catat stock movement.
+     * Jika transaksi belum dibayar, stok belum pernah berkurang sehingga tidak diubah.
      */
     public function cancel(Request $request, Transaction $transaction): RedirectResponse
     {
@@ -538,9 +541,9 @@ class TransactionController extends Controller
                 return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya dan tidak dapat dibatalkan lagi.');
             }
 
-            $alasan = $request->input('alasan_batal') ?: 'Dibatalkan oleh kasir/admin';
+            $alasan = $request->input('alasan_batal') ?: 'Dibatalkan oleh kasir';
 
-            // Jika transaksi sudah lunas, kembalikan stok sparepart dan catat stock movement
+            // Jika transaksi sudah lunas, kembalikan stok sparepart
             if ($trx->isLunas()) {
                 $sparepartDetails = $trx->sparepartDetails()->get();
 
@@ -569,17 +572,49 @@ class TransactionController extends Controller
 
             $updateData = [
                 'status' => 'dibatalkan',
+                'alasan_batal' => $alasan,
             ];
-
-            if (\Illuminate\Support\Facades\Schema::hasColumn('transactions', 'alasan_batal')) {
-                $updateData['alasan_batal'] = $alasan;
-            }
 
             $trx->update($updateData);
 
             return redirect()->route('transactions.show', $trx)
                 ->with('success', "Transaksi {$trx->no_transaksi} berhasil dibatalkan.");
         });
+    }
+
+    /**
+     * AJAX: Cari kendaraan berdasarkan plat nomor.
+     * Dipakai oleh form transaksi baru untuk auto-fill data kendaraan dan pelanggan.
+     */
+    public function cariKendaraan(Request $request)
+    {
+        $plat = strtoupper(trim($request->input('plat', '')));
+
+        if (!$plat) {
+            return response()->json(['found' => false]);
+        }
+
+        // Cari kendaraan berdasarkan plat nomor (pencarian mengandung kata)
+        $vehicle = Vehicle::with('customer')
+            ->where('plate_number', 'like', "%{$plat}%")
+            ->first();
+
+        if (!$vehicle) {
+            return response()->json(['found' => false]);
+        }
+
+        // Kembalikan data kendaraan dan pelanggan sebagai JSON
+        return response()->json([
+            'found'       => true,
+            'vehicle_id'  => $vehicle->id,
+            'plate'       => $vehicle->plate_number,
+            'brand'       => $vehicle->brand,
+            'model'       => $vehicle->model,
+            'year'        => $vehicle->year,
+            'customer_id'    => $vehicle->customer->id,
+            'customer_name'  => $vehicle->customer->name,
+            'customer_phone' => $vehicle->customer->phone ?? '',
+        ]);
     }
 }
 
