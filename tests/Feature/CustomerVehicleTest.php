@@ -445,14 +445,28 @@ class CustomerVehicleTest extends TestCase
             'year' => 2018,
         ]);
 
-        // Buat tabel transactions sementara untuk menguji proteksi relasi
-        \Illuminate\Support\Facades\Schema::create('transactions', function ($table) {
-            $table->id();
-            $table->foreignId('vehicle_id');
-        });
-        \Illuminate\Support\Facades\DB::table('transactions')->insert([
-            'vehicle_id' => $vehicle->id,
-        ]);
+        $createdTable = false;
+        if (!\Illuminate\Support\Facades\Schema::hasTable('transactions')) {
+            \Illuminate\Support\Facades\Schema::create('transactions', function ($table) {
+                $table->id();
+                $table->foreignId('vehicle_id');
+            });
+            $createdTable = true;
+            \Illuminate\Support\Facades\DB::table('transactions')->insert([
+                'vehicle_id' => $vehicle->id,
+            ]);
+        } else {
+            \Illuminate\Support\Facades\DB::table('transactions')->insert([
+                'no_transaksi' => 'INV-TEST-001',
+                'user_id'      => $this->kasir->id,
+                'customer_id'  => $customer->id,
+                'vehicle_id'   => $vehicle->id,
+                'status'       => 'belum_dibayar',
+                'total'        => 50000,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ]);
+        }
 
         // Mencoba menghapus kendaraan yang terikat transaksi
         $response = $this->actingAs($this->kasir)->delete(route('vehicles.destroy', $vehicle), [
@@ -464,8 +478,9 @@ class CustomerVehicleTest extends TestCase
             'id' => $vehicle->id,
         ]);
 
-        // Bersihkan tabel transactions sementara
-        \Illuminate\Support\Facades\Schema::dropIfExists('transactions');
+        if ($createdTable) {
+            \Illuminate\Support\Facades\Schema::dropIfExists('transactions');
+        }
     }
 }
 
